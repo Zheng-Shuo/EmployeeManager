@@ -1,0 +1,1841 @@
+openapi: 3.0.3
+info:
+  title: Employee Manager Server API
+  description: 员工管理系统后端 API 文档
+  version: 0.3.0
+
+servers:
+  - url: http://localhost:10086
+    description: 本地开发服务器
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Auth
+    description: 认证相关接口
+  - name: Users
+    description: 用户与用户角色管理接口
+  - name: Roles
+    description: 角色与权限接口
+  - name: Employees
+    description: 员工档案与归属关系接口
+  - name: Organizations
+    description: 组织架构接口
+  - name: Positions
+    description: 职位字典接口
+
+paths:
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: 用户登录
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseLoginResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: 用户名或密码错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseError"
+              example:
+                success: false
+                code: AUTH_401_INVALID_CREDENTIALS
+                message: 用户名或密码错误
+                data: null
+        "403":
+          description: 账号已被禁用
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseError"
+              example:
+                success: false
+                code: AUTH_403_ACCOUNT_DISABLED
+                message: 账号已被禁用
+                data: null
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: 刷新访问令牌
+      description: 使用 refresh token 换取新的 access token 和 refresh token（旧 refresh token 立即失效）
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: 刷新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseRefreshResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: refresh token 无效或已过期
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseError"
+              example:
+                success: false
+                code: AUTH_401_INVALID_REFRESH_TOKEN
+                message: 无效的刷新令牌
+                data: null
+        "403":
+          description: 账号已被禁用
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseError"
+              example:
+                success: false
+                code: AUTH_403_ACCOUNT_DISABLED
+                message: 账号已被禁用
+                data: null
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: 登出
+      description: 撤销指定的 refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/auth/password:
+    put:
+      tags:
+        - Auth
+      summary: 修改当前登录用户密码
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/users:
+    get:
+      tags:
+        - Users
+      summary: 获取用户列表
+      description: 需要权限 user:view
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserDTOList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags:
+        - Users
+      summary: 创建用户
+      description: 需要权限 user:create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/users/{id}/reset-password:
+    put:
+      tags:
+        - Users
+      summary: 重置用户密码
+      description: 需要权限 user:reset-password
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "200":
+          description: 重置成功，返回临时密码
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseResetPasswordResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/roles:
+    get:
+      tags:
+        - Roles
+      summary: 获取角色列表
+      description: 需要权限 role:view
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseRoleDTOList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags:
+        - Roles
+      summary: 创建角色
+      description: 需要权限 role:create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoleRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseRoleDetailDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/roles/{id}:
+    get:
+      tags:
+        - Roles
+      summary: 获取角色详情
+      description: 需要权限 role:view
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseRoleDetailDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags:
+        - Roles
+      summary: 更新角色
+      description: 需要权限 role:update
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoleRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseRoleDetailDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags:
+        - Roles
+      summary: 删除角色
+      description: 需要权限 role:delete
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/permissions:
+    get:
+      tags:
+        - Roles
+      summary: 获取权限列表
+      description: 需要权限 permission:view
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponsePermissionDTOList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/users/{userId}/roles:
+    get:
+      tags:
+        - Users
+      summary: 获取用户角色编码列表
+      description: 需要权限 user:view
+      parameters:
+        - $ref: "#/components/parameters/UuidUserIdPath"
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseStringList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags:
+        - Users
+      summary: 分配用户角色
+      description: 需要权限 user:create
+      parameters:
+        - $ref: "#/components/parameters/UuidUserIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignRolesRequest"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/employees:
+    get:
+      tags:
+        - Employees
+      summary: 分页查询员工
+      description: 所有已认证用户可访问
+      parameters:
+        - name: page
+          in: query
+          description: 页码，从 1 开始
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          description: 每页条数
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - name: keyword
+          in: query
+          description: 按姓名或工号模糊搜索
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: 员工状态过滤
+          schema:
+            $ref: "#/components/schemas/EmployeeStatus"
+      responses:
+        "200":
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponsePageResponseEmployeeDTO"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags:
+        - Employees
+      summary: 创建员工
+      description: 需要任一权限 employee:create、employee:update、employee:delete、employee:assign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/employees/{id}:
+    get:
+      tags:
+        - Employees
+      summary: 获取员工详情
+      description: 所有已认证用户可访问
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeDetailDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags:
+        - Employees
+      summary: 更新员工
+      description: 需要任一权限 employee:create、employee:update、employee:delete、employee:assign
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmployeeRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags:
+        - Employees
+      summary: 删除员工
+      description: 需要任一权限 employee:create、employee:update、employee:delete、employee:assign
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/employees/{id}/departments:
+    put:
+      tags:
+        - Employees
+      summary: 分配员工所属部门
+      description: 需要任一权限 employee:create、employee:update、employee:delete、employee:assign
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignDepartmentsRequest"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/employees/{id}/positions:
+    put:
+      tags:
+        - Employees
+      summary: 分配员工职位
+      description: 需要任一权限 employee:create、employee:update、employee:delete、employee:assign
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignPositionsRequest"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/organizations:
+    get:
+      tags:
+        - Organizations
+      summary: 获取组织列表
+      description: 所有已认证用户可访问；当 tree=true 时返回树形结构
+      parameters:
+        - name: tree
+          in: query
+          description: 是否返回树形结构
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ApiResponseOrgUnitDTOList"
+                  - $ref: "#/components/schemas/ApiResponseOrgUnitTreeNodeList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags:
+        - Organizations
+      summary: 创建组织单元
+      description: 需要任一权限 org:create、org:update、org:delete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrgUnitRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrgUnitDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/organizations/{id}:
+    get:
+      tags:
+        - Organizations
+      summary: 获取组织单元详情
+      description: 所有已认证用户可访问
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrgUnitDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags:
+        - Organizations
+      summary: 更新组织单元
+      description: 需要任一权限 org:create、org:update、org:delete
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrgUnitRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrgUnitDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags:
+        - Organizations
+      summary: 删除组织单元
+      description: 需要任一权限 org:create、org:update、org:delete
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/organizations/{id}/subtree:
+    get:
+      tags:
+        - Organizations
+      summary: 获取组织子树平铺列表
+      description: 所有已认证用户可访问
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrgUnitDTOList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/organizations/{id}/path:
+    get:
+      tags:
+        - Organizations
+      summary: 获取组织到根节点的路径
+      description: 所有已认证用户可访问
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrgUnitDTOList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/positions:
+    get:
+      tags:
+        - Positions
+      summary: 获取职位列表
+      description: 所有已认证用户可访问
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponsePositionDTOList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags:
+        - Positions
+      summary: 创建职位
+      description: 需要任一权限 position:create、position:update、position:delete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePositionRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponsePositionDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/positions/{id}:
+    get:
+      tags:
+        - Positions
+      summary: 获取职位详情
+      description: 所有已认证用户可访问
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponsePositionDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags:
+        - Positions
+      summary: 更新职位
+      description: 需要任一权限 position:create、position:update、position:delete
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePositionRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponsePositionDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags:
+        - Positions
+      summary: 删除职位
+      description: 需要任一权限 position:create、position:update、position:delete
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UuidIdPath:
+      name: id
+      in: path
+      required: true
+      description: UUID 标识符
+      schema:
+        $ref: "#/components/schemas/UuidString"
+
+    UuidUserIdPath:
+      name: userId
+      in: path
+      required: true
+      description: 用户 UUID
+      schema:
+        $ref: "#/components/schemas/UuidString"
+
+  responses:
+    NoContent:
+      description: 成功，无响应体
+
+    BadRequest:
+      description: 请求参数、UUID 或请求体格式无效
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseError"
+          example:
+            success: false
+            code: COMMON_400_INVALID_REQUEST_BODY
+            message: 请求体格式无效
+            data: null
+
+    Unauthorized:
+      description: 未认证或令牌无效
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseError"
+          example:
+            success: false
+            code: AUTH_401_NOT_AUTHENTICATED
+            message: 未认证
+            data: null
+
+    Forbidden:
+      description: 权限不足
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseError"
+          example:
+            success: false
+            code: AUTH_403_PERMISSION_DENIED
+            message: 权限不足
+            data: null
+
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseError"
+          example:
+            success: false
+            code: USER_404_NOT_FOUND
+            message: 资源不存在
+            data: null
+
+    Conflict:
+      description: 资源状态冲突
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseError"
+          example:
+            success: false
+            code: USER_409_USERNAME_EXISTS
+            message: 资源状态冲突
+            data: null
+
+    ValidationError:
+      description: 业务校验失败
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseError"
+          example:
+            success: false
+            code: AUTH_422_OLD_PASSWORD_WRONG
+            message: 业务校验失败
+            data: null
+
+    InternalError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiResponseError"
+          example:
+            success: false
+            code: COMMON_500_INTERNAL_ERROR
+            message: 服务器内部错误
+            data: null
+
+  schemas:
+    UuidString:
+      type: string
+      format: uuid
+      example: 00000000-0000-0000-0000-000000000001
+
+    TimestampString:
+      type: string
+      example: 2025-01-01 08:00:00
+
+    DateString:
+      type: string
+      example: 2025-01-01
+
+    UserStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - DISABLED
+
+    EmployeeStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - DISABLED
+        - RESIGNED
+        - RETIRED
+
+    OrgUnitType:
+      type: string
+      enum:
+        - GROUP
+        - COMPANY
+        - DEPARTMENT
+
+    ApiResponseMeta:
+      type: object
+      required:
+        - success
+        - code
+        - message
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+          example: SUCCESS
+        message:
+          type: string
+          example: OK
+
+    ApiResponseError:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            code:
+              type: string
+              example: COMMON_400_INVALID_REQUEST_BODY
+            message:
+              type: string
+              example: 请求体格式无效
+            data:
+              type: object
+              nullable: true
+              description: 始终为 null
+
+    ApiResponseLoginResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/LoginResponse"
+
+    ApiResponseRefreshResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/RefreshResponse"
+
+    ApiResponseUserDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/UserDTO"
+
+    ApiResponseUserDTOList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/UserDTO"
+
+    ApiResponseResetPasswordResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/ResetPasswordResponse"
+
+    ApiResponseRoleDTOList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/RoleDTO"
+
+    ApiResponseRoleDetailDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/RoleDetailDTO"
+
+    ApiResponsePermissionDTOList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/PermissionDTO"
+
+    ApiResponseStringList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                type: string
+
+    ApiResponseEmployeeDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/EmployeeDTO"
+
+    ApiResponseEmployeeDetailDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/EmployeeDetailDTO"
+
+    ApiResponsePageResponseEmployeeDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/PageResponseEmployeeDTO"
+
+    ApiResponseOrgUnitDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/OrgUnitDTO"
+
+    ApiResponseOrgUnitDTOList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/OrgUnitDTO"
+
+    ApiResponseOrgUnitTreeNodeList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/OrgUnitTreeNode"
+
+    ApiResponsePositionDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/PositionDTO"
+
+    ApiResponsePositionDTOList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/PositionDTO"
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: admin
+        password:
+          type: string
+          example: admin123
+
+    LoginResponse:
+      type: object
+      required:
+        - accessToken
+        - refreshToken
+        - userId
+        - username
+        - roles
+        - permissions
+        - forcePasswordChange
+      properties:
+        accessToken:
+          type: string
+          description: 短期访问令牌（JWT 格式，15 分钟有效）
+        refreshToken:
+          type: string
+          description: 长期刷新令牌（JWT 格式，7 天有效），用于换取新的 access token
+        userId:
+          $ref: "#/components/schemas/UuidString"
+        username:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        forcePasswordChange:
+          type: boolean
+
+    RefreshRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: 登录或上次刷新时获得的 refresh token
+
+    RefreshResponse:
+      type: object
+      required:
+        - accessToken
+        - refreshToken
+      properties:
+        accessToken:
+          type: string
+          description: 新的短期访问令牌（JWT 格式）
+        refreshToken:
+          type: string
+          description: 新的刷新令牌（JWT 格式，旧令牌已失效）
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - oldPassword
+        - newPassword
+      properties:
+        oldPassword:
+          type: string
+        newPassword:
+          type: string
+
+    UserDTO:
+      type: object
+      required:
+        - id
+        - username
+        - roles
+        - status
+        - forcePasswordChange
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        username:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        status:
+          $ref: "#/components/schemas/UserStatus"
+        forcePasswordChange:
+          type: boolean
+        createdAt:
+          $ref: "#/components/schemas/TimestampString"
+        updatedAt:
+          $ref: "#/components/schemas/TimestampString"
+
+    CreateUserRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          description: 长度至少 6 位
+        roleIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/UuidString"
+
+    ResetPasswordResponse:
+      type: object
+      required:
+        - temporaryPassword
+      properties:
+        temporaryPassword:
+          type: string
+
+    RoleDTO:
+      type: object
+      required:
+        - id
+        - name
+        - isSystem
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isSystem:
+          type: boolean
+        createdAt:
+          $ref: "#/components/schemas/TimestampString"
+        updatedAt:
+          $ref: "#/components/schemas/TimestampString"
+
+    RoleDetailDTO:
+      allOf:
+        - $ref: "#/components/schemas/RoleDTO"
+        - type: object
+          required:
+            - permissions
+          properties:
+            permissions:
+              type: array
+              items:
+                $ref: "#/components/schemas/PermissionDTO"
+
+    CreateRoleRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        permissionIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/UuidString"
+
+    UpdateRoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        permissionIds:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UuidString"
+
+    PermissionDTO:
+      type: object
+      required:
+        - id
+        - code
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        code:
+          type: string
+        description:
+          type: string
+          nullable: true
+
+    AssignRolesRequest:
+      type: object
+      required:
+        - roleIds
+      properties:
+        roleIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/UuidString"
+
+    EmployeeDTO:
+      type: object
+      required:
+        - id
+        - employeeNo
+        - name
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        employeeNo:
+          type: string
+        name:
+          type: string
+        gender:
+          type: string
+          nullable: true
+        birthDate:
+          allOf:
+            - $ref: "#/components/schemas/DateString"
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        hireDate:
+          allOf:
+            - $ref: "#/components/schemas/DateString"
+          nullable: true
+        status:
+          $ref: "#/components/schemas/EmployeeStatus"
+        createdAt:
+          $ref: "#/components/schemas/TimestampString"
+        updatedAt:
+          $ref: "#/components/schemas/TimestampString"
+
+    EmployeeDetailDTO:
+      allOf:
+        - $ref: "#/components/schemas/EmployeeDTO"
+        - type: object
+          required:
+            - departments
+            - positions
+          properties:
+            departments:
+              type: array
+              items:
+                $ref: "#/components/schemas/OrgUnitDTO"
+            positions:
+              type: array
+              items:
+                $ref: "#/components/schemas/PositionDTO"
+
+    CreateEmployeeRequest:
+      type: object
+      required:
+        - employeeNo
+        - name
+      properties:
+        employeeNo:
+          type: string
+        name:
+          type: string
+        gender:
+          type: string
+          nullable: true
+        birthDate:
+          allOf:
+            - $ref: "#/components/schemas/DateString"
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        hireDate:
+          allOf:
+            - $ref: "#/components/schemas/DateString"
+          nullable: true
+        status:
+          $ref: "#/components/schemas/EmployeeStatus"
+
+    UpdateEmployeeRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        gender:
+          type: string
+          nullable: true
+        birthDate:
+          allOf:
+            - $ref: "#/components/schemas/DateString"
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        hireDate:
+          allOf:
+            - $ref: "#/components/schemas/DateString"
+          nullable: true
+        status:
+          allOf:
+            - $ref: "#/components/schemas/EmployeeStatus"
+          nullable: true
+
+    AssignDepartmentsRequest:
+      type: object
+      required:
+        - orgUnitIds
+      properties:
+        orgUnitIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/UuidString"
+        primaryOrgUnitId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+
+    AssignPositionsRequest:
+      type: object
+      required:
+        - positionIds
+      properties:
+        positionIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/UuidString"
+        primaryPositionId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+
+    PageResponseEmployeeDTO:
+      type: object
+      required:
+        - items
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmployeeDTO"
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    OrgUnitDTO:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/OrgUnitType"
+        parentId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+        createdAt:
+          $ref: "#/components/schemas/TimestampString"
+        updatedAt:
+          $ref: "#/components/schemas/TimestampString"
+
+    OrgUnitTreeNode:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - children
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/OrgUnitType"
+        parentId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrgUnitTreeNode"
+
+    CreateOrgUnitRequest:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/OrgUnitType"
+        parentId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+
+    UpdateOrgUnitRequest:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/OrgUnitType"
+
+    PositionDTO:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          $ref: "#/components/schemas/TimestampString"
+        updatedAt:
+          $ref: "#/components/schemas/TimestampString"
+
+    CreatePositionRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+
+    UpdatePositionRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
