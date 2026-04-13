@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from "@/utils/request";
 import type {
   ApiResponseEmployeeDTO,
   ApiResponseEmployeeDetailDTO,
@@ -9,13 +9,13 @@ import type {
   EmployeeStatus,
   UpdateEmployeeRequest,
   UuidString,
-} from './types'
+} from "./types";
 
 export interface GetEmployeesParams {
-  page?: number
-  size?: number
-  keyword?: string
-  status?: EmployeeStatus
+  page?: number;
+  size?: number;
+  keyword?: string;
+  status?: EmployeeStatus;
 }
 
 /**
@@ -25,26 +25,28 @@ export async function getEmployees(
   params?: GetEmployeesParams,
 ): Promise<ApiResponsePageResponseEmployeeDTO> {
   const { data: response } = await request.get<ApiResponsePageResponseEmployeeDTO>(
-    '/api/employees',
+    "/api/employees",
     { params },
-  )
-  return response
+  );
+  return response;
 }
 
 /**
  * Create an employee.
  */
 export async function createEmployee(data: CreateEmployeeRequest): Promise<ApiResponseEmployeeDTO> {
-  const { data: response } = await request.post<ApiResponseEmployeeDTO>('/api/employees', data)
-  return response
+  const { data: response } = await request.post<ApiResponseEmployeeDTO>("/api/employees", data);
+  return response;
 }
 
 /**
  * Get employee details by id.
  */
 export async function getEmployeeById(id: UuidString): Promise<ApiResponseEmployeeDetailDTO> {
-  const { data: response } = await request.get<ApiResponseEmployeeDetailDTO>(`/api/employees/${id}`)
-  return response
+  const { data: response } = await request.get<ApiResponseEmployeeDetailDTO>(
+    `/api/employees/${id}`,
+  );
+  return response;
 }
 
 /**
@@ -54,15 +56,18 @@ export async function updateEmployee(
   id: UuidString,
   data: UpdateEmployeeRequest,
 ): Promise<ApiResponseEmployeeDTO> {
-  const { data: response } = await request.put<ApiResponseEmployeeDTO>(`/api/employees/${id}`, data)
-  return response
+  const { data: response } = await request.put<ApiResponseEmployeeDTO>(
+    `/api/employees/${id}`,
+    data,
+  );
+  return response;
 }
 
 /**
  * Delete an employee.
  */
 export async function deleteEmployee(id: UuidString): Promise<void> {
-  await request.delete(`/api/employees/${id}`)
+  await request.delete(`/api/employees/${id}`);
 }
 
 /**
@@ -72,7 +77,7 @@ export async function assignEmployeeDepartments(
   id: UuidString,
   data: AssignDepartmentsRequest,
 ): Promise<void> {
-  await request.put(`/api/employees/${id}/departments`, data)
+  await request.put(`/api/employees/${id}/departments`, data);
 }
 
 /**
@@ -82,5 +87,5 @@ export async function assignEmployeePositions(
   id: UuidString,
   data: AssignPositionsRequest,
 ): Promise<void> {
-  await request.put(`/api/employees/${id}/positions`, data)
+  await request.put(`/api/employees/${id}/positions`, data);
 }

@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from "@/utils/request";
 import type {
   ApiResponseOrgUnitDTO,
   ApiResponseOrgUnitDTOList,
@@ -6,10 +6,10 @@ import type {
   CreateOrgUnitRequest,
   UpdateOrgUnitRequest,
   UuidString,
-} from './types'
+} from "./types";
 
 export interface GetOrganizationsParams {
-  tree?: boolean
+  tree?: boolean;
 }
 
 /**
@@ -20,8 +20,8 @@ export async function getOrganizations(
 ): Promise<ApiResponseOrgUnitDTOList | ApiResponseOrgUnitTreeNodeList> {
   const { data: response } = await request.get<
     ApiResponseOrgUnitDTOList | ApiResponseOrgUnitTreeNodeList
-  >('/api/organizations', { params })
-  return response
+  >("/api/organizations", { params });
+  return response;
 }
 
 /**
@@ -30,16 +30,16 @@ export async function getOrganizations(
 export async function createOrganization(
   data: CreateOrgUnitRequest,
 ): Promise<ApiResponseOrgUnitDTO> {
-  const { data: response } = await request.post<ApiResponseOrgUnitDTO>('/api/organizations', data)
-  return response
+  const { data: response } = await request.post<ApiResponseOrgUnitDTO>("/api/organizations", data);
+  return response;
 }
 
 /**
  * Get an organization unit by id.
  */
 export async function getOrganizationById(id: UuidString): Promise<ApiResponseOrgUnitDTO> {
-  const { data: response } = await request.get<ApiResponseOrgUnitDTO>(`/api/organizations/${id}`)
-  return response
+  const { data: response } = await request.get<ApiResponseOrgUnitDTO>(`/api/organizations/${id}`);
+  return response;
 }
 
 /**
@@ -52,15 +52,15 @@ export async function updateOrganization(
   const { data: response } = await request.put<ApiResponseOrgUnitDTO>(
     `/api/organizations/${id}`,
     data,
-  )
-  return response
+  );
+  return response;
 }
 
 /**
  * Delete an organization unit.
  */
 export async function deleteOrganization(id: UuidString): Promise<void> {
-  await request.delete(`/api/organizations/${id}`)
+  await request.delete(`/api/organizations/${id}`);
 }
 
 /**
@@ -69,8 +69,8 @@ export async function deleteOrganization(id: UuidString): Promise<void> {
 export async function getOrganizationSubtree(id: UuidString): Promise<ApiResponseOrgUnitDTOList> {
   const { data: response } = await request.get<ApiResponseOrgUnitDTOList>(
     `/api/organizations/${id}/subtree`,
-  )
-  return response
+  );
+  return response;
 }
 
 /**
@@ -79,6 +79,6 @@ export async function getOrganizationSubtree(id: UuidString): Promise<ApiRespons
 export async function getOrganizationPath(id: UuidString): Promise<ApiResponseOrgUnitDTOList> {
   const { data: response } = await request.get<ApiResponseOrgUnitDTOList>(
     `/api/organizations/${id}/path`,
-  )
-  return response
+  );
+  return response;
 }
