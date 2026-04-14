@@ -5,6 +5,7 @@ export type DateString = string;
 export type UserStatus = "ACTIVE" | "DISABLED";
 export type EmployeeStatus = "ACTIVE" | "DISABLED" | "RESIGNED" | "RETIRED";
 export type OrgUnitType = "GROUP" | "COMPANY" | "DEPARTMENT";
+export type Gender = "MALE" | "FEMALE";
 
 export interface ApiResponseMeta {
   success: boolean;
@@ -83,6 +84,10 @@ export interface CreateUserRequest {
   roleIds?: UuidString[];
 }
 
+export interface UpdateUsernameRequest {
+  newUsername: string;
+}
+
 export interface ResetPasswordResponse {
   temporaryPassword: string;
 }
@@ -125,12 +130,15 @@ export interface AssignRolesRequest {
 export interface EmployeeDTO {
   id: UuidString;
   employeeNo: string;
+  idCardNo?: string | null;
+  age?: number | null;
   name: string;
   gender?: string | null;
   birthDate?: DateString | null;
   phone?: string | null;
   email?: string | null;
   address?: string | null;
+  photoPath?: string | null;
   hireDate?: DateString | null;
   status: EmployeeStatus;
   createdAt: TimestampString;
@@ -140,18 +148,34 @@ export interface EmployeeDTO {
 export interface EmployeeDetailDTO extends EmployeeDTO {
   departments: OrgUnitDTO[];
   positions: PositionDTO[];
+  attachments: EmployeeAttachmentDTO[];
+}
+
+export interface EmployeeAttachmentDTO {
+  id: UuidString;
+  originalName: string;
+  storedName: string;
+  contentType?: string | null;
+  filePath: string;
+  fileSize: number;
+  uploadedAt: TimestampString;
 }
 
 export interface CreateEmployeeRequest {
-  employeeNo: string;
+  employeeNo?: string | null;
+  idCardNo?: string | null;
+  age?: number | null;
   name: string;
-  gender?: string | null;
+  gender?: Gender | null;
   birthDate?: DateString | null;
   phone?: string | null;
   email?: string | null;
   address?: string | null;
+  photoPath?: string | null;
   hireDate?: DateString | null;
   status?: EmployeeStatus;
+  orgUnitIds?: UuidString[];
+  primaryOrgUnitId?: UuidString | null;
 }
 
 export interface UpdateEmployeeRequest {

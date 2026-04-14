@@ -1,7 +1,7 @@
 <template>
   <main class="home-view">
     <section class="home-card">
-      <h1 class="title">Employee Manager</h1>
+      <h1 class="title">人事管理系统</h1>
       <p class="description">前端基建已就绪，可开始接入员工管理业务页面。</p>
     </section>
   </main>
@@ -9,15 +9,13 @@
 
 <style scoped>
 .home-view {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: linear-gradient(135deg, #f5f7fb 0%, #eef3ff 100%);
+  min-height: 100%;
+  padding: 0;
 }
 
 .home-card {
-  width: min(680px, 100%);
+  width: min(760px, 100%);
+  margin: 0 auto;
   background: #ffffff;
   border: 1px solid #e7ebf5;
   border-radius: 16px;

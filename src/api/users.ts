@@ -6,6 +6,7 @@ import type {
   ApiResponseUserDTOList,
   AssignRolesRequest,
   CreateUserRequest,
+  UpdateUsernameRequest,
   UuidString,
 } from "./types";
 
@@ -29,7 +30,7 @@ export async function createUser(data: CreateUserRequest): Promise<ApiResponseUs
  * Reset a user's password and return a temporary password.
  */
 export async function resetUserPassword(id: UuidString): Promise<ApiResponseResetPasswordResponse> {
-  const { data: response } = await request.put<ApiResponseResetPasswordResponse>(
+  const { data: response } = await request.post<ApiResponseResetPasswordResponse>(
     `/api/users/${id}/reset-password`,
   );
   return response;
@@ -48,4 +49,18 @@ export async function getUserRoles(userId: UuidString): Promise<ApiResponseStrin
  */
 export async function assignUserRoles(userId: UuidString, data: AssignRolesRequest): Promise<void> {
   await request.put(`/api/users/${userId}/roles`, data);
+}
+
+/**
+ * Update username for specified user.
+ */
+export async function updateUsername(
+  userId: UuidString,
+  data: UpdateUsernameRequest,
+): Promise<ApiResponseUserDTO> {
+  const { data: response } = await request.patch<ApiResponseUserDTO>(
+    `/api/users/${userId}/username`,
+    data,
+  );
+  return response;
 }
