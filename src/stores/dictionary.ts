@@ -1,10 +1,8 @@
 import { defineStore } from "pinia";
 
-import { getDictionaries, getDictionaryById } from "@/api/dictionaries";
+import { getDictionariesWithItems } from "@/api/dictionaries";
 import type {
-  ApiResponseDictionaryCategoryDetailDTO,
-  ApiResponseDictionaryCategoryList,
-  DictionaryCategoryDTO,
+  ApiResponseDictionaryCategoryDetailDTOList,
   DictionaryCategoryDetailDTO,
   DictionaryItemDTO,
 } from "@/api/types";
@@ -20,46 +18,24 @@ export const useDictionaryStore = defineStore("dictionary", {
     loaded: false,
   }),
   getters: {
-    getItemsByCode:
+    getItemsByName:
       (state: DictionaryState) =>
-      (categoryCode: string): DictionaryItemDTO[] => {
+      (categoryName: string): DictionaryItemDTO[] => {
         const category = state.categories.find(
-          (c: DictionaryCategoryDetailDTO) => c.code === categoryCode,
+          (c: DictionaryCategoryDetailDTO) => c.name === categoryName,
         );
         if (!category) {
           return [];
         }
-        return category.items.filter((item: DictionaryItemDTO) => item.isEnabled);
-      },
-    getLabelByCode:
-      (state: DictionaryState) =>
-      (categoryCode: string, itemCode: string): string => {
-        const category = state.categories.find(
-          (c: DictionaryCategoryDetailDTO) => c.code === categoryCode,
-        );
-        if (!category) {
-          return itemCode;
-        }
-        const item = category.items.find((i: DictionaryItemDTO) => i.code === itemCode);
-        return item ? item.label : itemCode;
-      },
-    getColorByCode:
-      (state: DictionaryState) =>
-      (categoryCode: string, itemCode: string): string | null => {
-        const category = state.categories.find(
-          (c: DictionaryCategoryDetailDTO) => c.code === categoryCode,
-        );
-        if (!category) {
-          return null;
-        }
-        const item = category.items.find((i: DictionaryItemDTO) => i.code === itemCode);
-        return item?.color ?? null;
+        return category.items
+          .filter((item: DictionaryItemDTO) => item.isEnabled)
+          .sort((a: DictionaryItemDTO, b: DictionaryItemDTO) => a.sortOrder - b.sortOrder);
       },
     getLabelById:
       (state: DictionaryState) =>
-      (categoryCode: string, itemId: string): string => {
+      (categoryName: string, itemId: string): string => {
         const category = state.categories.find(
-          (c: DictionaryCategoryDetailDTO) => c.code === categoryCode,
+          (c: DictionaryCategoryDetailDTO) => c.name === categoryName,
         );
         if (!category) {
           return itemId;
@@ -69,9 +45,9 @@ export const useDictionaryStore = defineStore("dictionary", {
       },
     getColorById:
       (state: DictionaryState) =>
-      (categoryCode: string, itemId: string): string | null => {
+      (categoryName: string, itemId: string): string | null => {
         const category = state.categories.find(
-          (c: DictionaryCategoryDetailDTO) => c.code === categoryCode,
+          (c: DictionaryCategoryDetailDTO) => c.name === categoryName,
         );
         if (!category) {
           return null;
@@ -81,9 +57,9 @@ export const useDictionaryStore = defineStore("dictionary", {
       },
     getDefaultItemId:
       (state: DictionaryState) =>
-      (categoryCode: string): string | null => {
+      (categoryName: string): string | null => {
         const category = state.categories.find(
-          (c: DictionaryCategoryDetailDTO) => c.code === categoryCode,
+          (c: DictionaryCategoryDetailDTO) => c.name === categoryName,
         );
         if (!category) {
           return null;
@@ -97,15 +73,9 @@ export const useDictionaryStore = defineStore("dictionary", {
   actions: {
     async loadAll(): Promise<void> {
       try {
-        const listResponse: ApiResponseDictionaryCategoryList = await getDictionaries();
-        const details: ApiResponseDictionaryCategoryDetailDTO[] = await Promise.all(
-          listResponse.data.map((category: DictionaryCategoryDTO) =>
-            getDictionaryById(category.id),
-          ),
-        );
-        this.categories = details.map(
-          (response: ApiResponseDictionaryCategoryDetailDTO) => response.data,
-        );
+        const response: ApiResponseDictionaryCategoryDetailDTOList =
+          await getDictionariesWithItems();
+        this.categories = response.data;
         this.loaded = true;
       } catch {
         // Silently fail — dictionaries are non-critical for app boot.

@@ -32,8 +32,8 @@ function formatText(value?: string | null): string {
 }
 
 function getStatusPresentation(status: string): StatusPresentation {
-  const label = dictionaryStore.getLabelById("employee_status", status);
-  const color = dictionaryStore.getColorById("employee_status", status);
+  const label = dictionaryStore.getLabelById("员工状态", status);
+  const color = dictionaryStore.getColorById("员工状态", status);
   return { label, type: "info", color };
 }
 

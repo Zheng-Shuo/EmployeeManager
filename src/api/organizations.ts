@@ -4,6 +4,7 @@ import type {
   ApiResponseOrgUnitDTOList,
   ApiResponseOrgUnitTreeNodeList,
   CreateOrgUnitRequest,
+  MoveOrgUnitRequest,
   UpdateOrgUnitRequest,
   UuidString,
 } from "./types";
@@ -60,8 +61,22 @@ export async function updateOrganization(
   id: UuidString,
   data: UpdateOrgUnitRequest,
 ): Promise<ApiResponseOrgUnitDTO> {
-  const { data: response } = await request.put<ApiResponseOrgUnitDTO>(
+  const { data: response } = await request.patch<ApiResponseOrgUnitDTO>(
     `/api/organizations/${id}`,
+    data,
+  );
+  return response;
+}
+
+/**
+ * Move an organization unit to a new parent.
+ */
+export async function moveOrganization(
+  id: UuidString,
+  data: MoveOrgUnitRequest,
+): Promise<ApiResponseOrgUnitDTO> {
+  const { data: response } = await request.post<ApiResponseOrgUnitDTO>(
+    `/api/organizations/${id}/actions/move`,
     data,
   );
   return response;

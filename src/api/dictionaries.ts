@@ -2,6 +2,7 @@ import request from "@/utils/request";
 import type {
   ApiResponseDictionaryCategoryDTO,
   ApiResponseDictionaryCategoryDetailDTO,
+  ApiResponseDictionaryCategoryDetailDTOList,
   ApiResponseDictionaryCategoryList,
   ApiResponseDictionaryItemDTO,
   CreateCategoryRequest,
@@ -13,10 +14,7 @@ import type {
 
 export interface GetDictionariesParams {
   orgUnitId?: UuidString;
-}
-
-export interface GetDictionaryByCodeParams {
-  orgUnitId?: UuidString;
+  include?: "items";
 }
 
 /**
@@ -33,6 +31,19 @@ export async function getDictionaries(
 }
 
 /**
+ * Get all dictionary categories with their items in a single request.
+ */
+export async function getDictionariesWithItems(
+  params?: Omit<GetDictionariesParams, "include">,
+): Promise<ApiResponseDictionaryCategoryDetailDTOList> {
+  const { data: response } = await request.get<ApiResponseDictionaryCategoryDetailDTOList>(
+    "/api/dictionaries",
+    { params: { ...params, include: "items" } },
+  );
+  return response;
+}
+
+/**
  * Get dictionary category detail (with items) by id.
  */
 export async function getDictionaryById(
@@ -40,20 +51,6 @@ export async function getDictionaryById(
 ): Promise<ApiResponseDictionaryCategoryDetailDTO> {
   const { data: response } = await request.get<ApiResponseDictionaryCategoryDetailDTO>(
     `/api/dictionaries/${id}`,
-  );
-  return response;
-}
-
-/**
- * Get dictionary category detail (with items) by code.
- */
-export async function getDictionaryByCode(
-  code: string,
-  params?: GetDictionaryByCodeParams,
-): Promise<ApiResponseDictionaryCategoryDetailDTO> {
-  const { data: response } = await request.get<ApiResponseDictionaryCategoryDetailDTO>(
-    `/api/dictionaries/by-code/${encodeURIComponent(code)}`,
-    { params },
   );
   return response;
 }
@@ -122,11 +119,24 @@ export async function updateDictionaryItem(
 }
 
 /**
- * Delete a dictionary item (first call disables, second call deletes).
+ * Delete a dictionary item.
  */
 export async function deleteDictionaryItem(
   categoryId: UuidString,
   itemId: UuidString,
 ): Promise<void> {
   await request.delete(`/api/dictionaries/${categoryId}/items/${itemId}`);
+}
+
+/**
+ * Disable a dictionary item (logical disable, preserves history references).
+ */
+export async function disableDictionaryItem(
+  categoryId: UuidString,
+  itemId: UuidString,
+): Promise<ApiResponseDictionaryItemDTO> {
+  const { data: response } = await request.patch<ApiResponseDictionaryItemDTO>(
+    `/api/dictionaries/${categoryId}/items/${itemId}/disable`,
+  );
+  return response;
 }

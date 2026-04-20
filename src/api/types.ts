@@ -127,20 +127,20 @@ export interface AssignRolesRequest {
 
 export interface EmployeeDTO {
   id: UuidString;
-  employeeNo: string;
-  idCardNo?: string | null;
-  age?: number | null;
+  employeeNo: string | null;
+  idCardNo: string;
+  age: number;
   name: string;
-  gender?: string | null;
-  birthDate?: DateString | null;
-  phone?: string | null;
-  email?: string | null;
-  address?: string | null;
-  photoPath?: string | null;
-  hireDate?: DateString | null;
+  gender: Gender;
+  birthDate: DateString;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  photoPath: string | null;
+  hireDate: DateString;
   status: string;
-  ethnicity?: string | null;
-  politicalStatus?: string | null;
+  ethnicity: string | null;
+  politicalStatus: string | null;
   employmentType: string;
   createdAt: TimestampString;
   updatedAt: TimestampString;
@@ -166,7 +166,7 @@ export interface EmployeeAttachmentDTO {
   id: UuidString;
   originalName: string;
   storedName: string;
-  contentType?: string | null;
+  contentType: string;
   filePath: string;
   fileSize: number;
   uploadedAt: TimestampString;
@@ -175,7 +175,7 @@ export interface EmployeeAttachmentDTO {
 export interface AssignmentInput {
   orgUnitId: UuidString;
   positionId?: UuidString | null;
-  isPrimary?: boolean;
+  isPrimary: boolean;
   startDate: DateString;
   endDate?: DateString | null;
 }
@@ -232,11 +232,7 @@ export interface OrgUnitDTO {
   updatedAt: TimestampString;
 }
 
-export interface OrgUnitTreeNode {
-  id: UuidString;
-  name: string;
-  type: string;
-  parentId?: UuidString | null;
+export interface OrgUnitTreeNode extends OrgUnitDTO {
   children: OrgUnitTreeNode[];
 }
 
@@ -247,8 +243,12 @@ export interface CreateOrgUnitRequest {
 }
 
 export interface UpdateOrgUnitRequest {
-  name: string;
-  type: string;
+  name?: string;
+  type?: string;
+}
+
+export interface MoveOrgUnitRequest {
+  newParentId: UuidString | null;
 }
 
 export interface PositionDTO {
@@ -263,6 +263,7 @@ export interface PositionDTO {
 
 export interface CreatePositionRequest {
   name: string;
+  orgUnitId: UuidString;
   description?: string | null;
 }
 
@@ -275,11 +276,10 @@ export interface UpdatePositionRequest {
 
 export interface DictionaryCategoryDTO {
   id: UuidString;
-  code: string;
   name: string;
-  description?: string | null;
+  description: string | null;
   isSystem: boolean;
-  orgUnitId?: UuidString | null;
+  orgUnitId: UuidString | null;
   createdAt: TimestampString;
   updatedAt: TimestampString;
 }
@@ -287,12 +287,11 @@ export interface DictionaryCategoryDTO {
 export interface DictionaryItemDTO {
   id: UuidString;
   categoryId: UuidString;
-  code: string;
   label: string;
   sortOrder: number;
   isDefault: boolean;
   isEnabled: boolean;
-  color?: string | null;
+  color: string | null;
   createdAt: TimestampString;
   updatedAt: TimestampString;
 }
@@ -302,7 +301,6 @@ export interface DictionaryCategoryDetailDTO extends DictionaryCategoryDTO {
 }
 
 export interface CreateCategoryRequest {
-  code: string;
   name: string;
   description?: string | null;
   orgUnitId?: UuidString | null;
@@ -314,7 +312,6 @@ export interface UpdateCategoryRequest {
 }
 
 export interface CreateItemRequest {
-  code: string;
   label: string;
   sortOrder?: number;
   isDefault?: boolean;
@@ -333,4 +330,9 @@ export interface UpdateItemRequest {
 export type ApiResponseDictionaryCategoryDTO = ApiResponse<DictionaryCategoryDTO>;
 export type ApiResponseDictionaryCategoryDetailDTO = ApiResponse<DictionaryCategoryDetailDTO>;
 export type ApiResponseDictionaryCategoryList = ApiResponse<DictionaryCategoryDTO[]>;
+export type ApiResponseDictionaryCategoryDetailDTOList = ApiResponse<DictionaryCategoryDetailDTO[]>;
 export type ApiResponseDictionaryItemDTO = ApiResponse<DictionaryItemDTO>;
+
+export interface UpdateUserStatusRequest {
+  status: UserStatus;
+}

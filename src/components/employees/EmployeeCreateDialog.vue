@@ -78,14 +78,14 @@ const form = reactive<CreateEmployeeRequest>({
 const dictionaryStore = useDictionaryStore();
 
 const statusOptions = computed(() =>
-  dictionaryStore.getItemsByCode("employee_status").map((item: DictionaryItemDTO) => ({
+  dictionaryStore.getItemsByName("员工状态").map((item: DictionaryItemDTO) => ({
     label: item.label,
     value: item.id,
   })),
 );
 
 const employmentTypeOptions = computed(() =>
-  dictionaryStore.getItemsByCode("employment_type").map((item: DictionaryItemDTO) => ({
+  dictionaryStore.getItemsByName("用工形式").map((item: DictionaryItemDTO) => ({
     label: item.label,
     value: item.id,
   })),
@@ -277,11 +277,11 @@ function getFileExtension(name: string): string {
 }
 
 function setDefaultValues(): void {
-  const defaultStatus = dictionaryStore.getDefaultItemId("employee_status");
+  const defaultStatus = dictionaryStore.getDefaultItemId("员工状态");
   if (defaultStatus) {
     form.status = defaultStatus;
   }
-  const defaultEmploymentType = dictionaryStore.getDefaultItemId("employment_type");
+  const defaultEmploymentType = dictionaryStore.getDefaultItemId("用工形式");
   if (defaultEmploymentType) {
     form.employmentType = defaultEmploymentType;
   }

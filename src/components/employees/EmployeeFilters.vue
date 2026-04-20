@@ -19,7 +19,7 @@ const status = defineModel<string>("status", { required: true });
 
 const dictionaryStore = useDictionaryStore();
 const statusOptions = computed(() =>
-  dictionaryStore.getItemsByCode("employee_status").map((item: DictionaryItemDTO) => ({
+  dictionaryStore.getItemsByName("员工状态").map((item: DictionaryItemDTO) => ({
     label: item.label,
     value: item.id,
   })),

@@ -21,6 +21,12 @@ export interface CreateEmployeeWithFilesPayload {
   attachmentFiles?: File[];
 }
 
+export interface UpdateEmployeeWithFilesPayload {
+  data: UpdateEmployeeRequest;
+  photoFile?: File | null;
+  attachmentFiles?: File[];
+}
+
 function appendFormDataField(formData: FormData, key: string, value: unknown): void {
   if (value === undefined || value === null || value === "") {
     return;
@@ -114,6 +120,45 @@ export async function updateEmployee(
   const { data: response } = await request.put<ApiResponseEmployeeDTO>(
     `/api/employees/${id}`,
     data,
+  );
+  return response;
+}
+
+/**
+ * Update an employee with optional photo and attachments.
+ */
+export async function updateEmployeeMultipart(
+  id: UuidString,
+  payload: UpdateEmployeeWithFilesPayload,
+): Promise<ApiResponseEmployeeDTO> {
+  const formData = new FormData();
+
+  appendFormDataField(formData, "name", payload.data.name);
+  appendFormDataField(formData, "idCardNo", payload.data.idCardNo);
+  appendFormDataField(formData, "age", payload.data.age);
+  appendFormDataField(formData, "gender", payload.data.gender);
+  appendFormDataField(formData, "birthDate", payload.data.birthDate);
+  appendFormDataField(formData, "phone", payload.data.phone);
+  appendFormDataField(formData, "email", payload.data.email);
+  appendFormDataField(formData, "address", payload.data.address);
+  appendFormDataField(formData, "hireDate", payload.data.hireDate);
+  appendFormDataField(formData, "status", payload.data.status);
+  appendFormDataField(formData, "ethnicity", payload.data.ethnicity);
+  appendFormDataField(formData, "politicalStatus", payload.data.politicalStatus);
+  appendFormDataField(formData, "employmentType", payload.data.employmentType);
+  appendFormDataField(formData, "assignments", payload.data.assignments);
+
+  if (payload.photoFile) {
+    formData.append("photo", payload.photoFile);
+  }
+
+  for (const attachment of payload.attachmentFiles ?? []) {
+    formData.append("attachments", attachment);
+  }
+
+  const { data: response } = await request.put<ApiResponseEmployeeDTO>(
+    `/api/employees/${id}`,
+    formData,
   );
   return response;
 }

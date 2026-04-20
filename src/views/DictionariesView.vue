@@ -41,14 +41,12 @@ const categoryDialogMode = ref<"create" | "edit">("create");
 const categorySubmitting = ref(false);
 const categoryFormRef = ref<FormInstance>();
 const categoryForm = reactive<CreateCategoryRequest>({
-  code: "",
   name: "",
   description: "",
   orgUnitId: null,
 });
 
 const categoryFormRules: FormRules<CreateCategoryRequest> = {
-  code: [{ required: true, message: "请输入编码", trigger: "blur" }],
   name: [{ required: true, message: "请输入名称", trigger: "blur" }],
 };
 
@@ -59,7 +57,6 @@ const itemSubmitting = ref(false);
 const itemFormRef = ref<FormInstance>();
 const editingItemId = ref<string>("");
 const itemForm = reactive<CreateItemRequest>({
-  code: "",
   label: "",
   sortOrder: 0,
   isDefault: false,
@@ -68,7 +65,6 @@ const itemForm = reactive<CreateItemRequest>({
 });
 
 const itemFormRules: FormRules<CreateItemRequest> = {
-  code: [{ required: true, message: "请输入编码", trigger: "blur" }],
   label: [{ required: true, message: "请输入显示名称", trigger: "blur" }],
 };
 
@@ -121,7 +117,6 @@ watch(selectedCategoryId, (): void => {
 // ── Category CRUD ──────────────────────────────────────────────────
 function openCreateCategory(): void {
   categoryDialogMode.value = "create";
-  categoryForm.code = "";
   categoryForm.name = "";
   categoryForm.description = "";
   categoryForm.orgUnitId = null;
@@ -133,7 +128,6 @@ function openEditCategory(): void {
     return;
   }
   categoryDialogMode.value = "edit";
-  categoryForm.code = selectedCategory.value.code;
   categoryForm.name = selectedCategory.value.name;
   categoryForm.description = selectedCategory.value.description ?? "";
   categoryForm.orgUnitId = selectedCategory.value.orgUnitId ?? null;
@@ -150,7 +144,6 @@ async function handleCategorySubmit(): Promise<void> {
   try {
     if (categoryDialogMode.value === "create") {
       await createDictionary({
-        code: categoryForm.code.trim(),
         name: categoryForm.name.trim(),
         description: categoryForm.description?.trim() || null,
         orgUnitId: categoryForm.orgUnitId || null,
@@ -205,7 +198,6 @@ async function handleDeleteCategory(): Promise<void> {
 function openCreateItem(): void {
   itemDialogMode.value = "create";
   editingItemId.value = "";
-  itemForm.code = "";
   itemForm.label = "";
   itemForm.sortOrder = 0;
   itemForm.isDefault = false;
@@ -217,7 +209,6 @@ function openCreateItem(): void {
 function openEditItem(item: DictionaryItemDTO): void {
   itemDialogMode.value = "edit";
   editingItemId.value = item.id;
-  itemForm.code = item.code;
   itemForm.label = item.label;
   itemForm.sortOrder = item.sortOrder;
   itemForm.isDefault = item.isDefault;
@@ -236,7 +227,6 @@ async function handleItemSubmit(): Promise<void> {
   try {
     if (itemDialogMode.value === "create") {
       const payload: CreateItemRequest = {
-        code: itemForm.code.trim(),
         label: itemForm.label.trim(),
         sortOrder: itemForm.sortOrder,
         isDefault: itemForm.isDefault,
@@ -317,7 +307,7 @@ onMounted((): void => {
             {{ cat.name }}
             <el-tag v-if="cat.isSystem" size="small" type="info" class="system-tag">系统</el-tag>
           </div>
-          <div class="category-code">{{ cat.code }}</div>
+          <div class="category-code">{{ cat.description || "" }}</div>
         </div>
         <el-empty v-if="categories.length === 0 && !categoriesLoading" description="暂无字典分类" />
       </div>
@@ -329,9 +319,6 @@ onMounted((): void => {
         <div class="panel-header">
           <div>
             <span class="panel-title">{{ selectedCategory?.name ?? "字典项" }}</span>
-            <span v-if="selectedCategory" class="panel-subtitle"
-              >（{{ selectedCategory.code }}）</span
-            >
           </div>
           <div v-if="selectedCategory" class="panel-actions">
             <el-button size="small" :disabled="isSystemCategory" @click="openEditCategory">
@@ -351,7 +338,6 @@ onMounted((): void => {
       </template>
 
       <el-table v-loading="detailLoading" :data="items" stripe border>
-        <el-table-column prop="code" label="编码" min-width="140" />
         <el-table-column prop="label" label="显示名称" min-width="140" />
         <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
         <el-table-column label="默认" width="80" align="center">
@@ -408,14 +394,6 @@ onMounted((): void => {
         :rules="categoryFormRules"
         label-position="top"
       >
-        <el-form-item label="编码" prop="code">
-          <el-input
-            v-model="categoryForm.code"
-            :disabled="categoryDialogMode === 'edit'"
-            placeholder="如 employee_status"
-            clearable
-          />
-        </el-form-item>
         <el-form-item label="名称" prop="name">
           <el-input v-model="categoryForm.name" placeholder="如 员工状态" clearable />
         </el-form-item>
@@ -445,17 +423,7 @@ onMounted((): void => {
     >
       <el-form ref="itemFormRef" :model="itemForm" :rules="itemFormRules" label-position="top">
         <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="编码" prop="code">
-              <el-input
-                v-model="itemForm.code"
-                :disabled="itemDialogMode === 'edit'"
-                placeholder="如 ACTIVE"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="显示名称" prop="label">
               <el-input v-model="itemForm.label" placeholder="如 在职" clearable />
             </el-form-item>

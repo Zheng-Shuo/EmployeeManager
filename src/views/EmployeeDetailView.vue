@@ -121,7 +121,7 @@ onMounted((): void => {
                 formatGender(employee.gender)
               }}</el-descriptions-item>
               <el-descriptions-item label="状态">{{
-                dictionaryStore.getLabelById("employee_status", employee.status)
+                dictionaryStore.getLabelById("员工状态", employee.status)
               }}</el-descriptions-item>
               <el-descriptions-item label="手机">{{
                 formatText(employee.phone)

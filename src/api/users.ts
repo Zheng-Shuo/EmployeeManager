@@ -7,6 +7,7 @@ import type {
   AssignRolesRequest,
   CreateUserRequest,
   UpdateUsernameRequest,
+  UpdateUserStatusRequest,
   UuidString,
 } from "./types";
 
@@ -63,4 +64,25 @@ export async function updateUsername(
     data,
   );
   return response;
+}
+
+/**
+ * Update user status (ACTIVE or DISABLED).
+ */
+export async function updateUserStatus(
+  id: UuidString,
+  data: UpdateUserStatusRequest,
+): Promise<ApiResponseUserDTO> {
+  const { data: response } = await request.patch<ApiResponseUserDTO>(
+    `/api/users/${id}/status`,
+    data,
+  );
+  return response;
+}
+
+/**
+ * Delete a user.
+ */
+export async function deleteUser(id: UuidString): Promise<void> {
+  await request.delete(`/api/users/${id}`);
 }
