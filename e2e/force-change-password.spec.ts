@@ -114,9 +114,9 @@ test.describe("强制修改密码流程", () => {
 
     await mockChangePasswordApi(page);
 
-    await page.locator('input[type="password"]').nth(0).fill("oldPass123");
-    await page.locator('input[type="password"]').nth(1).fill("password");
-    await page.locator('input[type="password"]').nth(2).fill("password");
+    await page.locator('input[type="password"]').nth(0).fill("5kuslvhe9n");
+    await page.locator('input[type="password"]').nth(1).fill("5kuslvhe9n");
+    await page.locator('input[type="password"]').nth(2).fill("5kuslvhe9n");
     await page.locator('button:has-text("确认修改")').click();
 
     await expect(page).toHaveURL(/\/$/);

@@ -3,12 +3,14 @@ import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { getEmployeeById } from "@/api/employees";
-import type { EmployeeAttachmentDTO, EmployeeDetailDTO } from "@/api/types";
+import type { EmployeeAssignmentDTO, EmployeeAttachmentDTO, EmployeeDetailDTO } from "@/api/types";
+import { useDictionaryStore } from "@/stores/dictionary";
 
 const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
 const employee = ref<EmployeeDetailDTO | null>(null);
+const dictionaryStore = useDictionaryStore();
 
 function formatText(value?: string | null): string {
   return value && value.trim() ? value : "--";
@@ -118,7 +120,9 @@ onMounted((): void => {
               <el-descriptions-item label="性别">{{
                 formatGender(employee.gender)
               }}</el-descriptions-item>
-              <el-descriptions-item label="状态">{{ employee.status }}</el-descriptions-item>
+              <el-descriptions-item label="状态">{{
+                dictionaryStore.getLabelById("employee_status", employee.status)
+              }}</el-descriptions-item>
               <el-descriptions-item label="手机">{{
                 formatText(employee.phone)
               }}</el-descriptions-item>
@@ -134,31 +138,37 @@ onMounted((): void => {
               <el-descriptions-item label="联系地址" :span="2">
                 {{ formatText(employee.address) }}
               </el-descriptions-item>
-              <el-descriptions-item label="所属部门" :span="2">
-                <div class="tag-list">
-                  <el-tag
-                    v-for="department in employee.departments"
-                    :key="department.id"
-                    effect="light"
-                    type="success"
-                  >
-                    {{ department.name }}
-                  </el-tag>
-                  <span v-if="employee.departments.length === 0">--</span>
+              <el-descriptions-item label="任职分配" :span="2">
+                <div v-if="(employee.assignments ?? []).length > 0" class="assignments-wrap">
+                  <el-table :data="employee.assignments" size="small" border>
+                    <el-table-column prop="orgUnitName" label="部门" min-width="160" />
+                    <el-table-column label="职位" min-width="140">
+                      <template #default="scope">
+                        {{ (scope.row as EmployeeAssignmentDTO).positionName ?? "--" }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="主岗" width="80" align="center">
+                      <template #default="scope">
+                        <el-tag
+                          v-if="(scope.row as EmployeeAssignmentDTO).isPrimary"
+                          type="success"
+                          size="small"
+                          effect="light"
+                        >
+                          是
+                        </el-tag>
+                        <span v-else>否</span>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="startDate" label="开始日期" min-width="120" />
+                    <el-table-column label="结束日期" min-width="120">
+                      <template #default="scope">
+                        {{ (scope.row as EmployeeAssignmentDTO).endDate ?? "--" }}
+                      </template>
+                    </el-table-column>
+                  </el-table>
                 </div>
-              </el-descriptions-item>
-              <el-descriptions-item label="职位" :span="2">
-                <div class="tag-list">
-                  <el-tag
-                    v-for="position in employee.positions"
-                    :key="position.id"
-                    effect="light"
-                    type="info"
-                  >
-                    {{ position.name }}
-                  </el-tag>
-                  <span v-if="employee.positions.length === 0">--</span>
-                </div>
+                <span v-else>--</span>
               </el-descriptions-item>
               <el-descriptions-item label="员工附件" :span="2">
                 <div v-if="(employee.attachments ?? []).length > 0" class="attachments-wrap">
@@ -238,6 +248,10 @@ onMounted((): void => {
 }
 
 .attachments-wrap {
+  width: 100%;
+}
+
+.assignments-wrap {
   width: 100%;
 }
 </style>

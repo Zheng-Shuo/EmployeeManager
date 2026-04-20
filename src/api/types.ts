@@ -3,8 +3,6 @@ export type TimestampString = string;
 export type DateString = string;
 
 export type UserStatus = "ACTIVE" | "DISABLED";
-export type EmployeeStatus = "ACTIVE" | "DISABLED" | "RESIGNED" | "RETIRED";
-export type OrgUnitType = "GROUP" | "COMPANY" | "DEPARTMENT";
 export type Gender = "MALE" | "FEMALE";
 
 export interface ApiResponseMeta {
@@ -140,14 +138,27 @@ export interface EmployeeDTO {
   address?: string | null;
   photoPath?: string | null;
   hireDate?: DateString | null;
-  status: EmployeeStatus;
+  status: string;
+  ethnicity?: string | null;
+  politicalStatus?: string | null;
+  employmentType: string;
   createdAt: TimestampString;
   updatedAt: TimestampString;
 }
 
+export interface EmployeeAssignmentDTO {
+  id: UuidString;
+  orgUnitId: UuidString;
+  orgUnitName: string;
+  positionId?: UuidString | null;
+  positionName?: string | null;
+  isPrimary: boolean;
+  startDate: DateString;
+  endDate?: DateString | null;
+}
+
 export interface EmployeeDetailDTO extends EmployeeDTO {
-  departments: OrgUnitDTO[];
-  positions: PositionDTO[];
+  assignments: EmployeeAssignmentDTO[];
   attachments: EmployeeAttachmentDTO[];
 }
 
@@ -161,42 +172,47 @@ export interface EmployeeAttachmentDTO {
   uploadedAt: TimestampString;
 }
 
+export interface AssignmentInput {
+  orgUnitId: UuidString;
+  positionId?: UuidString | null;
+  isPrimary?: boolean;
+  startDate: DateString;
+  endDate?: DateString | null;
+}
+
 export interface CreateEmployeeRequest {
-  employeeNo?: string | null;
+  name: string;
   idCardNo?: string | null;
   age?: number | null;
-  name: string;
   gender?: Gender | null;
   birthDate?: DateString | null;
+  hireDate?: DateString | null;
+  employmentType?: string | null;
+  employeeNo?: string | null;
   phone?: string | null;
   email?: string | null;
   address?: string | null;
-  photoPath?: string | null;
-  hireDate?: DateString | null;
-  status?: EmployeeStatus;
-  orgUnitIds?: UuidString[];
-  primaryOrgUnitId?: UuidString | null;
+  status?: string | null;
+  ethnicity?: string | null;
+  politicalStatus?: string | null;
+  assignments?: AssignmentInput[];
 }
 
 export interface UpdateEmployeeRequest {
   name: string;
+  idCardNo?: string | null;
+  age?: number | null;
   gender?: string | null;
   birthDate?: DateString | null;
   phone?: string | null;
   email?: string | null;
   address?: string | null;
   hireDate?: DateString | null;
-  status?: EmployeeStatus | null;
-}
-
-export interface AssignDepartmentsRequest {
-  orgUnitIds: UuidString[];
-  primaryOrgUnitId?: UuidString | null;
-}
-
-export interface AssignPositionsRequest {
-  positionIds: UuidString[];
-  primaryPositionId?: UuidString | null;
+  status?: string | null;
+  ethnicity?: string | null;
+  politicalStatus?: string | null;
+  employmentType?: string | null;
+  assignments?: AssignmentInput[];
 }
 
 export interface PageResponseEmployeeDTO {
@@ -210,7 +226,7 @@ export interface PageResponseEmployeeDTO {
 export interface OrgUnitDTO {
   id: UuidString;
   name: string;
-  type: OrgUnitType;
+  type: string;
   parentId?: UuidString | null;
   createdAt: TimestampString;
   updatedAt: TimestampString;
@@ -219,26 +235,28 @@ export interface OrgUnitDTO {
 export interface OrgUnitTreeNode {
   id: UuidString;
   name: string;
-  type: OrgUnitType;
+  type: string;
   parentId?: UuidString | null;
   children: OrgUnitTreeNode[];
 }
 
 export interface CreateOrgUnitRequest {
   name: string;
-  type: OrgUnitType;
+  type: string;
   parentId?: UuidString | null;
 }
 
 export interface UpdateOrgUnitRequest {
   name: string;
-  type: OrgUnitType;
+  type: string;
 }
 
 export interface PositionDTO {
   id: UuidString;
   name: string;
   description?: string | null;
+  orgUnitId: UuidString;
+  orgUnitName: string;
   createdAt: TimestampString;
   updatedAt: TimestampString;
 }
@@ -252,3 +270,67 @@ export interface UpdatePositionRequest {
   name: string;
   description?: string | null;
 }
+
+// ── 数据字典 ──────────────────────────────────────────────────────
+
+export interface DictionaryCategoryDTO {
+  id: UuidString;
+  code: string;
+  name: string;
+  description?: string | null;
+  isSystem: boolean;
+  orgUnitId?: UuidString | null;
+  createdAt: TimestampString;
+  updatedAt: TimestampString;
+}
+
+export interface DictionaryItemDTO {
+  id: UuidString;
+  categoryId: UuidString;
+  code: string;
+  label: string;
+  sortOrder: number;
+  isDefault: boolean;
+  isEnabled: boolean;
+  color?: string | null;
+  createdAt: TimestampString;
+  updatedAt: TimestampString;
+}
+
+export interface DictionaryCategoryDetailDTO extends DictionaryCategoryDTO {
+  items: DictionaryItemDTO[];
+}
+
+export interface CreateCategoryRequest {
+  code: string;
+  name: string;
+  description?: string | null;
+  orgUnitId?: UuidString | null;
+}
+
+export interface UpdateCategoryRequest {
+  name?: string | null;
+  description?: string | null;
+}
+
+export interface CreateItemRequest {
+  code: string;
+  label: string;
+  sortOrder?: number;
+  isDefault?: boolean;
+  isEnabled?: boolean;
+  color?: string | null;
+}
+
+export interface UpdateItemRequest {
+  label?: string | null;
+  sortOrder?: number;
+  isDefault?: boolean;
+  isEnabled?: boolean;
+  color?: string | null;
+}
+
+export type ApiResponseDictionaryCategoryDTO = ApiResponse<DictionaryCategoryDTO>;
+export type ApiResponseDictionaryCategoryDetailDTO = ApiResponse<DictionaryCategoryDetailDTO>;
+export type ApiResponseDictionaryCategoryList = ApiResponse<DictionaryCategoryDTO[]>;
+export type ApiResponseDictionaryItemDTO = ApiResponse<DictionaryItemDTO>;

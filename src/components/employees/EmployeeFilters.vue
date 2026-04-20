@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { EmployeeStatus } from "@/api/types";
+import { computed } from "vue";
+
+import type { DictionaryItemDTO } from "@/api/types";
+import { useDictionaryStore } from "@/stores/dictionary";
 
 interface Props {
   loading: boolean;
@@ -12,14 +15,15 @@ const emit = defineEmits<{
 }>();
 
 const keyword = defineModel<string>("keyword", { required: true });
-const status = defineModel<EmployeeStatus | "">("status", { required: true });
+const status = defineModel<string>("status", { required: true });
 
-const statusOptions: Array<{ label: string; value: EmployeeStatus }> = [
-  { label: "在职", value: "ACTIVE" },
-  { label: "停用", value: "DISABLED" },
-  { label: "离职", value: "RESIGNED" },
-  { label: "退休", value: "RETIRED" },
-];
+const dictionaryStore = useDictionaryStore();
+const statusOptions = computed(() =>
+  dictionaryStore.getItemsByCode("employee_status").map((item: DictionaryItemDTO) => ({
+    label: item.label,
+    value: item.id,
+  })),
+);
 
 function handleReset(): void {
   emit("reset");

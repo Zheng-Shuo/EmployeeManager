@@ -14,4 +14,15 @@ body,
   width: 100%;
   height: 100%;
 }
+
+/* 全局隐藏滚动条但保留滚动能力 */
+*,
+*::before,
+*::after {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
 </style>

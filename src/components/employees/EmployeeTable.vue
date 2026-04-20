@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { useRouter } from "vue-router";
 
-import type { EmployeeDTO, EmployeeStatus } from "@/api/types";
+import type { EmployeeDTO } from "@/api/types";
+import { useDictionaryStore } from "@/stores/dictionary";
 
 interface Props {
   employees: EmployeeDTO[];
@@ -19,25 +19,22 @@ const emit = defineEmits<{
   sizeChange: [size: number];
 }>();
 const router = useRouter();
+const dictionaryStore = useDictionaryStore();
 
 interface StatusPresentation {
   label: string;
   type: "danger" | "info" | "primary" | "success" | "warning";
+  color: string | null;
 }
-
-const statusPresentation = computed<Record<EmployeeStatus, StatusPresentation>>(() => ({
-  ACTIVE: { label: "在职", type: "success" },
-  DISABLED: { label: "停用", type: "info" },
-  RESIGNED: { label: "离职", type: "warning" },
-  RETIRED: { label: "退休", type: "primary" },
-}));
 
 function formatText(value?: string | null): string {
   return value && value.trim() ? value : "--";
 }
 
-function getStatusPresentation(status: EmployeeStatus): StatusPresentation {
-  return statusPresentation.value[status] ?? { label: status, type: "info" };
+function getStatusPresentation(status: string): StatusPresentation {
+  const label = dictionaryStore.getLabelById("employee_status", status);
+  const color = dictionaryStore.getColorById("employee_status", status);
+  return { label, type: "info", color };
 }
 
 function openDetail(employee: EmployeeDTO): void {

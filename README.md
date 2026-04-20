@@ -35,6 +35,8 @@ pnpm install
 pnpm dev
 ```
 
+默认访问地址为 [http://localhost:10010](http://localhost:10010) 。
+
 ### Type-Check, Compile and Minify for Production
 
 ```sh

@@ -3,10 +3,7 @@ import type {
   ApiResponseEmployeeDTO,
   ApiResponseEmployeeDetailDTO,
   ApiResponsePageResponseEmployeeDTO,
-  AssignDepartmentsRequest,
-  AssignPositionsRequest,
   CreateEmployeeRequest,
-  EmployeeStatus,
   UpdateEmployeeRequest,
   UuidString,
 } from "./types";
@@ -15,7 +12,7 @@ export interface GetEmployeesParams {
   page?: number;
   size?: number;
   keyword?: string;
-  status?: EmployeeStatus;
+  status?: string;
 }
 
 export interface CreateEmployeeWithFilesPayload {
@@ -80,8 +77,10 @@ export async function createEmployeeMultipart(
   appendFormDataField(formData, "address", payload.data.address);
   appendFormDataField(formData, "hireDate", payload.data.hireDate);
   appendFormDataField(formData, "status", payload.data.status);
-  appendFormDataField(formData, "orgUnitIds", payload.data.orgUnitIds);
-  appendFormDataField(formData, "primaryOrgUnitId", payload.data.primaryOrgUnitId);
+  appendFormDataField(formData, "ethnicity", payload.data.ethnicity);
+  appendFormDataField(formData, "politicalStatus", payload.data.politicalStatus);
+  appendFormDataField(formData, "employmentType", payload.data.employmentType);
+  appendFormDataField(formData, "assignments", payload.data.assignments);
 
   if (payload.photoFile) {
     formData.append("photo", payload.photoFile);
@@ -124,24 +123,4 @@ export async function updateEmployee(
  */
 export async function deleteEmployee(id: UuidString): Promise<void> {
   await request.delete(`/api/employees/${id}`);
-}
-
-/**
- * Assign departments for an employee.
- */
-export async function assignEmployeeDepartments(
-  id: UuidString,
-  data: AssignDepartmentsRequest,
-): Promise<void> {
-  await request.put(`/api/employees/${id}/departments`, data);
-}
-
-/**
- * Assign positions for an employee.
- */
-export async function assignEmployeePositions(
-  id: UuidString,
-  data: AssignPositionsRequest,
-): Promise<void> {
-  await request.put(`/api/employees/${id}/positions`, data);
 }

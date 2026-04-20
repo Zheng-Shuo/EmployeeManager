@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import MainLayout from "@/layouts/MainLayout.vue";
 import { setupGuards } from "@/router/guards";
 import DashboardView from "@/views/DashboardView.vue";
+import DictionariesView from "@/views/DictionariesView.vue";
 import EmployeeDetailView from "@/views/EmployeeDetailView.vue";
 import EmployeesView from "@/views/EmployeesView.vue";
 import ForbiddenView from "@/views/ForbiddenView.vue";
@@ -97,6 +98,15 @@ const router = createRouter({
           component: ProfileView,
           meta: {
             title: "个人信息",
+          },
+        },
+        {
+          path: "dictionaries",
+          name: "dictionaries",
+          component: DictionariesView,
+          meta: {
+            title: "数据字典",
+            permissions: ["dictionary:manage"],
           },
         },
       ],

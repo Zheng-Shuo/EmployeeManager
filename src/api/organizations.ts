@@ -25,6 +25,17 @@ export async function getOrganizations(
 }
 
 /**
+ * Get organization tree structure.
+ */
+export async function getOrganizationTree(): Promise<ApiResponseOrgUnitTreeNodeList> {
+  const { data: response } = await request.get<ApiResponseOrgUnitTreeNodeList>(
+    "/api/organizations",
+    { params: { tree: true } },
+  );
+  return response;
+}
+
+/**
  * Create an organization unit.
  */
 export async function createOrganization(

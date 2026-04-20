@@ -1,6 +1,8 @@
 import process from "node:process";
 import { defineConfig, devices } from "@playwright/test";
 
+const APP_BASE_URL = "http://localhost:10010";
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -34,7 +36,7 @@ export default defineConfig({
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 0,
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.CI ? "http://localhost:4173" : "http://localhost:5173",
+    baseURL: APP_BASE_URL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
@@ -104,7 +106,7 @@ export default defineConfig({
      * Playwright will re-use the local server if there is already a dev-server running.
      */
     command: process.env.CI ? "npm run preview" : "npm run dev",
-    port: process.env.CI ? 4173 : 5173,
+    port: 10010,
     reuseExistingServer: !process.env.CI,
   },
 });

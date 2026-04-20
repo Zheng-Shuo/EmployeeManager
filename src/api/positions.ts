@@ -7,11 +7,19 @@ import type {
   UuidString,
 } from "./types";
 
+export interface GetPositionsParams {
+  orgUnitId?: UuidString;
+}
+
 /**
- * Get all positions.
+ * Get all positions. Optionally filter by orgUnitId.
  */
-export async function getPositions(): Promise<ApiResponsePositionDTOList> {
-  const { data: response } = await request.get<ApiResponsePositionDTOList>("/api/positions");
+export async function getPositions(
+  params?: GetPositionsParams,
+): Promise<ApiResponsePositionDTOList> {
+  const { data: response } = await request.get<ApiResponsePositionDTOList>("/api/positions", {
+    params,
+  });
   return response;
 }
 

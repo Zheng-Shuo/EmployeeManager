@@ -24,6 +24,8 @@ tags:
     description: 组织架构接口
   - name: Positions
     description: 职位字典接口
+  - name: Dictionaries
+    description: 数据字典管理接口
 
 paths:
   /api/auth/login:
@@ -125,29 +127,19 @@ paths:
         - Auth
       summary: 登出
       description: 撤销指定的 refresh token。该操作只会使 refresh token 失效，已签发的 access token 在自然过期前仍可继续访问受保护接口。
-      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RefreshRequest"
+              $ref: "#/components/schemas/LogoutRequest"
       responses:
         "204":
           $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
-          description: refresh token 无效、格式错误或传入了 access token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiResponseError"
-              example:
-                success: false
-                code: AUTH_401_INVALID_REFRESH_TOKEN
-                message: 无效的刷新令牌
-                data: null
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -284,6 +276,78 @@ paths:
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/users/{id}/status:
+    patch:
+      tags:
+        - Users
+      summary: 更新用户状态
+      description: 需要权限 user:update。不能修改自己的状态。禁用时自动撤销该用户的所有 refresh token。
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserStatusRequest"
+      responses:
+        "200":
+          description: 更新成功，返回更新后的用户信息
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: 不能修改自己的状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseError"
+        "422":
+          description: 状态值无效（仅支持 ACTIVE / DISABLED）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/users/{id}:
+    delete:
+      tags:
+        - Users
+      summary: 删除用户
+      description: 需要权限 user:delete。不能删除自己，不能删除拥有 ADMIN 角色的用户。级联删除用户角色关联和 refresh token。
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: 不能删除自己或不能删除管理员用户
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseError"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -468,7 +532,7 @@ paths:
       tags:
         - Users
       summary: 分配用户角色
-      description: 需要权限 user:create
+      description: 需要权限 user:update
       parameters:
         - $ref: "#/components/parameters/UuidUserIdPath"
       requestBody:
@@ -494,7 +558,7 @@ paths:
       tags:
         - Employees
       summary: 分页查询员工
-      description: 所有已认证用户可访问
+      description: 需要权限 employee:view
       parameters:
         - name: page
           in: query
@@ -529,6 +593,8 @@ paths:
                 $ref: "#/components/schemas/ApiResponsePageResponseEmployeeDTO"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -536,7 +602,7 @@ paths:
       tags:
         - Employees
       summary: 创建员工
-      description: 需要任一权限 employee:create、employee:update、employee:delete、employee:assign。支持 application/json 和 multipart/form-data（可上传照片与多个附件）
+      description: 需要权限 employee:create。支持 application/json 和 multipart/form-data（可上传照片与多个附件）
       requestBody:
         required: true
         content:
@@ -571,7 +637,7 @@ paths:
       tags:
         - Employees
       summary: 获取员工详情
-      description: 所有已认证用户可访问
+      description: 需要权限 employee:view
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       responses:
@@ -585,6 +651,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -594,7 +662,7 @@ paths:
       tags:
         - Employees
       summary: 更新员工
-      description: 需要任一权限 employee:create、employee:update、employee:delete、employee:assign。支持 application/json 和 multipart/form-data（可上传照片与多个附件）
+      description: 需要权限 employee:update。支持 application/json 和 multipart/form-data（可上传照片与多个附件）
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       requestBody:
@@ -630,7 +698,7 @@ paths:
       tags:
         - Employees
       summary: 删除员工
-      description: 需要任一权限 employee:create、employee:update、employee:delete、employee:assign
+      description: 需要权限 employee:delete
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       responses:
@@ -644,66 +712,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
-
-  /api/employees/{id}/departments:
-    put:
-      tags:
-        - Employees
-      summary: 分配员工所属部门
-      description: 需要任一权限 employee:create、employee:update、employee:delete、employee:assign
-      parameters:
-        - $ref: "#/components/parameters/UuidIdPath"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AssignDepartmentsRequest"
-      responses:
-        "204":
-          $ref: "#/components/responses/NoContent"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/InternalError"
-
-  /api/employees/{id}/positions:
-    put:
-      tags:
-        - Employees
-      summary: 分配员工职位
-      description: 需要任一权限 employee:create、employee:update、employee:delete、employee:assign
-      parameters:
-        - $ref: "#/components/parameters/UuidIdPath"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AssignPositionsRequest"
-      responses:
-        "204":
-          $ref: "#/components/responses/NoContent"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -712,7 +720,7 @@ paths:
       tags:
         - Organizations
       summary: 获取组织列表
-      description: 所有已认证用户可访问；当 tree=true 时返回树形结构
+      description: 需要权限 org:view；当 tree=true 时返回树形结构
       parameters:
         - name: tree
           in: query
@@ -730,6 +738,8 @@ paths:
                   - $ref: "#/components/schemas/ApiResponseOrgUnitTreeNodeList"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -737,7 +747,7 @@ paths:
       tags:
         - Organizations
       summary: 创建组织单元
-      description: 需要任一权限 org:create、org:update、org:delete
+      description: 需要权限 org:create
       requestBody:
         required: true
         content:
@@ -767,7 +777,7 @@ paths:
       tags:
         - Organizations
       summary: 获取组织单元详情
-      description: 所有已认证用户可访问
+      description: 需要权限 org:view
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       responses:
@@ -781,16 +791,18 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
 
-    put:
+    patch:
       tags:
         - Organizations
       summary: 更新组织单元
-      description: 需要任一权限 org:create、org:update、org:delete
+      description: 需要权限 org:update
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       requestBody:
@@ -823,7 +835,7 @@ paths:
       tags:
         - Organizations
       summary: 删除组织单元
-      description: 需要任一权限 org:create、org:update、org:delete
+      description: 需要权限 org:delete
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       responses:
@@ -842,12 +854,49 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /api/organizations/{id}/actions/move:
+    post:
+      tags:
+        - Organizations
+      summary: 移动组织单元（修改父节点）
+      description: |
+        需要权限 org:update。
+        传 parentId 为目标父节点 UUID，传 null 则移动为根节点。
+        校验规则：不能移动到自身，不能移动到自己的子孙节点。
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoveOrgUnitRequest"
+      responses:
+        "200":
+          description: 移动成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrgUnitDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /api/organizations/{id}/subtree:
     get:
       tags:
         - Organizations
       summary: 获取组织子树平铺列表
-      description: 所有已认证用户可访问
+      description: 需要权限 org:view
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       responses:
@@ -861,6 +910,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -871,7 +922,7 @@ paths:
       tags:
         - Organizations
       summary: 获取组织到根节点的路径
-      description: 所有已认证用户可访问
+      description: 需要权限 org:view
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       responses:
@@ -885,6 +936,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -895,7 +948,14 @@ paths:
       tags:
         - Positions
       summary: 获取职位列表
-      description: 所有已认证用户可访问
+      description: 需要权限 position:view；可选按组织过滤
+      parameters:
+        - name: orgUnitId
+          in: query
+          required: false
+          description: 组织单元 ID，传入时仅返回该组织下职位
+          schema:
+            $ref: "#/components/schemas/UuidString"
       responses:
         "200":
           description: 获取成功
@@ -905,6 +965,8 @@ paths:
                 $ref: "#/components/schemas/ApiResponsePositionDTOList"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -912,7 +974,7 @@ paths:
       tags:
         - Positions
       summary: 创建职位
-      description: 需要任一权限 position:create、position:update、position:delete
+      description: 需要权限 position:create
       requestBody:
         required: true
         content:
@@ -942,7 +1004,7 @@ paths:
       tags:
         - Positions
       summary: 获取职位详情
-      description: 所有已认证用户可访问
+      description: 需要权限 position:view
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       responses:
@@ -956,6 +1018,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -965,7 +1029,7 @@ paths:
       tags:
         - Positions
       summary: 更新职位
-      description: 需要任一权限 position:create、position:update、position:delete
+      description: 需要权限 position:update
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       requestBody:
@@ -998,7 +1062,7 @@ paths:
       tags:
         - Positions
       summary: 删除职位
-      description: 需要任一权限 position:create、position:update、position:delete
+      description: 需要权限 position:delete
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       responses:
@@ -1014,6 +1078,296 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ── 数据字典 ─────────────────────────────────────────────────────────
+
+  /api/dictionaries:
+    get:
+      tags:
+        - Dictionaries
+      summary: 获取字典分类列表
+      description: |
+        仅需登录认证，无额外权限要求。支持通过 orgUnitId 过滤。
+        默认返回字典分类基础信息；当 include=items 时返回分类及其字典项明细。
+      parameters:
+        - name: orgUnitId
+          in: query
+          schema:
+            $ref: "#/components/schemas/UuidString"
+          required: false
+          description: 组织单元 ID，传入时返回全局分类 + 该组织的分类
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [items]
+          description: 返回扩展内容。传入 items 时返回分类及其字典项明细。
+      responses:
+        "200":
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ApiResponseDictionaryCategoryList"
+                  - $ref: "#/components/schemas/ApiResponseDictionaryCategoryDetailList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags:
+        - Dictionaries
+      summary: 创建字典分类
+      description: 需要权限 dictionary:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseDictionaryCategoryDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/dictionaries/{id}:
+    get:
+      tags:
+        - Dictionaries
+      summary: 获取字典分类详情（含字典项）
+      description: 仅需登录认证，无额外权限要求
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "200":
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseDictionaryCategoryDetailDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags:
+        - Dictionaries
+      summary: 更新字典分类
+      description: 需要权限 dictionary:manage。系统内置分类不允许修改名称。
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseDictionaryCategoryDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags:
+        - Dictionaries
+      summary: 删除字典分类
+      description: 需要权限 dictionary:manage。系统内置分类不允许删除。删除分类时自动级联删除其下所有字典项。
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/dictionaries/{id}/items:
+    post:
+      tags:
+        - Dictionaries
+      summary: 添加字典项
+      description: 需要权限 dictionary:manage
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateItemRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseDictionaryItemDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/dictionaries/{id}/items/{itemId}:
+    put:
+      tags:
+        - Dictionaries
+      summary: 更新字典项
+      description: 需要权限 dictionary:manage
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UuidString"
+          description: 字典项 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateItemRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseDictionaryItemDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags:
+        - Dictionaries
+      summary: 删除字典项
+      description: 需要权限 dictionary:manage。直接物理删除字典项。如需禁用而非删除，请使用 PATCH /{id}/items/{itemId}/disable 接口。
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UuidString"
+          description: 字典项 ID
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/dictionaries/{id}/items/{itemId}/disable:
+    patch:
+      tags:
+        - Dictionaries
+      summary: 禁用字典项
+      description: 需要权限 dictionary:manage。将字典项设为禁用状态（isEnabled=false）。已禁用的字典项不能重复禁用。
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UuidString"
+          description: 字典项 ID
+      responses:
+        "200":
+          description: 禁用成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseDictionaryItemDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: 字典项已处于禁用状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseError"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -1154,11 +1508,7 @@ components:
 
     EmployeeStatus:
       type: string
-      description: "员工在职状态 \u2014 ACTIVE 在职 | RESIGNED 离职 | RETIRED 退休"
-      enum:
-        - ACTIVE
-        - RESIGNED
-        - RETIRED
+      description: "员工状态字典项 ID（UUID），值来源于数据字典 employee_status 分类下的字典项"
 
     Gender:
       type: string
@@ -1169,11 +1519,7 @@ components:
 
     OrgUnitType:
       type: string
-      description: "组织类型 \u2014 GROUP 集团 | COMPANY 公司 | DEPARTMENT 部门"
-      enum:
-        - GROUP
-        - COMPANY
-        - DEPARTMENT
+      description: "组织类型，值来源于数据字典 org_unit_type（默认: COMPANY 公司 | DEPARTMENT 部门）"
 
     ApiResponseMeta:
       type: object
@@ -1405,7 +1751,7 @@ components:
           example: admin
         password:
           type: string
-          example: admin123
+          example: 5kuslvhe9n
 
     LoginResponse:
       type: object
@@ -1447,6 +1793,15 @@ components:
         refreshToken:
           type: string
           description: 登录或上次刷新时获得的 refresh token
+
+    LogoutRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: 需要撤销的 refresh token
 
     RefreshResponse:
       type: object
@@ -1524,6 +1879,16 @@ components:
         newUsername:
           type: string
           description: 新用户名，不能为空且不能与当前名相同
+
+    UpdateUserStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, DISABLED]
+          description: 用户状态，仅支持 ACTIVE 或 DISABLED
 
     ResetPasswordResponse:
       type: object
@@ -1626,8 +1991,14 @@ components:
       type: object
       required:
         - id
+        - idCardNo
+        - age
         - name
+        - gender
+        - birthDate
+        - hireDate
         - status
+        - employmentType
         - createdAt
         - updatedAt
       properties:
@@ -1638,22 +2009,16 @@ components:
           nullable: true
         idCardNo:
           type: string
-          nullable: true
         age:
           type: integer
           minimum: 0
           maximum: 150
-          nullable: true
         name:
           type: string
         gender:
-          allOf:
-            - $ref: "#/components/schemas/Gender"
-          nullable: true
+          $ref: "#/components/schemas/Gender"
         birthDate:
-          allOf:
-            - $ref: "#/components/schemas/DateString"
-          nullable: true
+          $ref: "#/components/schemas/DateString"
         phone:
           type: string
           nullable: true
@@ -1667,33 +2032,67 @@ components:
           type: string
           nullable: true
         hireDate:
-          allOf:
-            - $ref: "#/components/schemas/DateString"
-          nullable: true
+          $ref: "#/components/schemas/DateString"
         status:
-          $ref: "#/components/schemas/EmployeeStatus"
+          type: string
+          description: 员工状态字典项 ID（UUID）
+        ethnicity:
+          type: string
+          nullable: true
+        politicalStatus:
+          type: string
+          nullable: true
+        employmentType:
+          type: string
+          description: 用工形式字典项 ID（UUID）
         createdAt:
           $ref: "#/components/schemas/TimestampString"
         updatedAt:
           $ref: "#/components/schemas/TimestampString"
+
+    EmployeeAssignmentDTO:
+      type: object
+      required:
+        - id
+        - orgUnitId
+        - orgUnitName
+        - isPrimary
+        - startDate
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        orgUnitId:
+          $ref: "#/components/schemas/UuidString"
+        orgUnitName:
+          type: string
+        positionId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+        positionName:
+          type: string
+          nullable: true
+        isPrimary:
+          type: boolean
+        startDate:
+          $ref: "#/components/schemas/DateString"
+        endDate:
+          allOf:
+            - $ref: "#/components/schemas/DateString"
+          nullable: true
 
     EmployeeDetailDTO:
       allOf:
         - $ref: "#/components/schemas/EmployeeDTO"
         - type: object
           required:
-            - departments
-            - positions
+            - assignments
             - attachments
           properties:
-            departments:
+            assignments:
               type: array
               items:
-                $ref: "#/components/schemas/OrgUnitDTO"
-            positions:
-              type: array
-              items:
-                $ref: "#/components/schemas/PositionDTO"
+                $ref: "#/components/schemas/EmployeeAssignmentDTO"
             attachments:
               type: array
               items:
@@ -1726,31 +2125,58 @@ components:
         uploadedAt:
           $ref: "#/components/schemas/TimestampString"
 
+    AssignmentInput:
+      type: object
+      required:
+        - orgUnitId
+        - startDate
+      properties:
+        orgUnitId:
+          $ref: "#/components/schemas/UuidString"
+        positionId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+        isPrimary:
+          type: boolean
+          default: false
+        startDate:
+          $ref: "#/components/schemas/DateString"
+        endDate:
+          allOf:
+            - $ref: "#/components/schemas/DateString"
+          nullable: true
+
     CreateEmployeeRequest:
       type: object
       required:
         - name
+        - idCardNo
+        - age
+        - gender
+        - birthDate
+        - hireDate
+        - employmentType
       properties:
-        employeeNo:
+        name:
           type: string
-          nullable: true
         idCardNo:
           type: string
-          nullable: true
         age:
           type: integer
           minimum: 0
           maximum: 150
-          nullable: true
-        name:
-          type: string
         gender:
-          allOf:
-            - $ref: "#/components/schemas/Gender"
-          nullable: true
+          $ref: "#/components/schemas/Gender"
         birthDate:
-          allOf:
-            - $ref: "#/components/schemas/DateString"
+          $ref: "#/components/schemas/DateString"
+        hireDate:
+          $ref: "#/components/schemas/DateString"
+        employmentType:
+          type: string
+          description: 用工形式字典项 ID（UUID）
+        employeeNo:
+          type: string
           nullable: true
         phone:
           type: string
@@ -1764,30 +2190,34 @@ components:
         photoPath:
           type: string
           nullable: true
-        hireDate:
-          allOf:
-            - $ref: "#/components/schemas/DateString"
-          nullable: true
         status:
-          allOf:
-            - $ref: "#/components/schemas/EmployeeStatus"
-          default: ACTIVE
-        orgUnitIds:
+          type: string
+          description: 员工状态字典项 ID（UUID），不传则使用默认值
+          nullable: true
+        ethnicity:
+          type: string
+          nullable: true
+        politicalStatus:
+          type: string
+          nullable: true
+        assignments:
           type: array
           items:
-            $ref: "#/components/schemas/UuidString"
+            $ref: "#/components/schemas/AssignmentInput"
           default: []
-        primaryOrgUnitId:
-          allOf:
-            - $ref: "#/components/schemas/UuidString"
-          nullable: true
 
     CreateEmployeeMultipartRequest:
       type: object
       required:
         - name
+        - idCardNo
+        - age
+        - gender
+        - birthDate
+        - hireDate
+        - employmentType
       properties:
-        employeeNo:
+        name:
           type: string
         idCardNo:
           type: string
@@ -1795,27 +2225,33 @@ components:
           type: integer
           minimum: 0
           maximum: 150
-        name:
-          type: string
         gender:
           $ref: "#/components/schemas/Gender"
         birthDate:
           $ref: "#/components/schemas/DateString"
+        hireDate:
+          $ref: "#/components/schemas/DateString"
+        employmentType:
+          type: string
+          description: 用工形式字典项 ID（UUID）
+        employeeNo:
+          type: string
         phone:
           type: string
         email:
           type: string
         address:
           type: string
-        hireDate:
-          $ref: "#/components/schemas/DateString"
         status:
-          $ref: "#/components/schemas/EmployeeStatus"
-        orgUnitIds:
           type: string
-          description: 组织 ID 列表，支持 JSON 数组字符串或逗号分隔
-        primaryOrgUnitId:
+          description: 员工状态字典项 ID（UUID）
+        ethnicity:
           type: string
+        politicalStatus:
+          type: string
+        assignments:
+          type: string
+          description: 任职分配列表（JSON 字符串），元素为 AssignmentInput
         photo:
           type: string
           format: binary
@@ -1829,27 +2265,32 @@ components:
       type: object
       required:
         - name
+        - idCardNo
+        - age
+        - gender
+        - birthDate
+        - hireDate
+        - employmentType
       properties:
         name:
           type: string
-        employeeNo:
-          type: string
-          nullable: true
         idCardNo:
           type: string
-          nullable: true
         age:
           type: integer
           minimum: 0
           maximum: 150
-          nullable: true
         gender:
-          allOf:
-            - $ref: "#/components/schemas/Gender"
-          nullable: true
+          $ref: "#/components/schemas/Gender"
         birthDate:
-          allOf:
-            - $ref: "#/components/schemas/DateString"
+          $ref: "#/components/schemas/DateString"
+        hireDate:
+          $ref: "#/components/schemas/DateString"
+        employmentType:
+          type: string
+          description: 用工形式字典项 ID（UUID）
+        employeeNo:
+          type: string
           nullable: true
         phone:
           type: string
@@ -1863,32 +2304,34 @@ components:
         photoPath:
           type: string
           nullable: true
-        hireDate:
-          allOf:
-            - $ref: "#/components/schemas/DateString"
-          nullable: true
         status:
-          allOf:
-            - $ref: "#/components/schemas/EmployeeStatus"
+          type: string
+          description: 员工状态字典项 ID（UUID）
           nullable: true
-        orgUnitIds:
+        ethnicity:
+          type: string
+          nullable: true
+        politicalStatus:
+          type: string
+          nullable: true
+        assignments:
           type: array
           items:
-            $ref: "#/components/schemas/UuidString"
-          nullable: true
-        primaryOrgUnitId:
-          allOf:
-            - $ref: "#/components/schemas/UuidString"
+            $ref: "#/components/schemas/AssignmentInput"
           nullable: true
 
     UpdateEmployeeMultipartRequest:
       type: object
       required:
         - name
+        - idCardNo
+        - age
+        - gender
+        - birthDate
+        - hireDate
+        - employmentType
       properties:
         name:
-          type: string
-        employeeNo:
           type: string
         idCardNo:
           type: string
@@ -1900,21 +2343,29 @@ components:
           $ref: "#/components/schemas/Gender"
         birthDate:
           $ref: "#/components/schemas/DateString"
+        hireDate:
+          $ref: "#/components/schemas/DateString"
+        employmentType:
+          type: string
+          description: 用工形式字典项 ID（UUID）
+        employeeNo:
+          type: string
         phone:
           type: string
         email:
           type: string
         address:
           type: string
-        hireDate:
-          $ref: "#/components/schemas/DateString"
         status:
-          $ref: "#/components/schemas/EmployeeStatus"
-        orgUnitIds:
           type: string
-          description: 组织 ID 列表，支持 JSON 数组字符串或逗号分隔
-        primaryOrgUnitId:
+          description: 员工状态字典项 ID（UUID）
+        ethnicity:
           type: string
+        politicalStatus:
+          type: string
+        assignments:
+          type: string
+          description: 任职分配列表（JSON 字符串），元素为 AssignmentInput
         photo:
           type: string
           format: binary
@@ -1923,34 +2374,6 @@ components:
           items:
             type: string
             format: binary
-
-    AssignDepartmentsRequest:
-      type: object
-      required:
-        - orgUnitIds
-      properties:
-        orgUnitIds:
-          type: array
-          items:
-            $ref: "#/components/schemas/UuidString"
-        primaryOrgUnitId:
-          allOf:
-            - $ref: "#/components/schemas/UuidString"
-          nullable: true
-
-    AssignPositionsRequest:
-      type: object
-      required:
-        - positionIds
-      properties:
-        positionIds:
-          type: array
-          items:
-            $ref: "#/components/schemas/UuidString"
-        primaryPositionId:
-          allOf:
-            - $ref: "#/components/schemas/UuidString"
-          nullable: true
 
     PageResponseEmployeeDTO:
       type: object
@@ -2039,20 +2462,28 @@ components:
 
     UpdateOrgUnitRequest:
       type: object
-      required:
-        - name
-        - type
       properties:
         name:
           type: string
         type:
           $ref: "#/components/schemas/OrgUnitType"
 
+    MoveOrgUnitRequest:
+      type: object
+      properties:
+        parentId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+          description: "目标父组织 ID，传 null 则移动为根节点"
+
     PositionDTO:
       type: object
       required:
         - id
         - name
+        - orgUnitId
+        - orgUnitName
         - createdAt
         - updatedAt
       properties:
@@ -2063,6 +2494,10 @@ components:
         description:
           type: string
           nullable: true
+        orgUnitId:
+          $ref: "#/components/schemas/UuidString"
+        orgUnitName:
+          type: string
         createdAt:
           $ref: "#/components/schemas/TimestampString"
         updatedAt:
@@ -2072,9 +2507,12 @@ components:
       type: object
       required:
         - name
+        - orgUnitId
       properties:
         name:
           type: string
+        orgUnitId:
+          $ref: "#/components/schemas/UuidString"
         description:
           type: string
           nullable: true
@@ -2089,3 +2527,204 @@ components:
         description:
           type: string
           nullable: true
+
+    # ── 数据字典 DTO ───────────────────────────────────────────────────
+
+    DictionaryCategoryDTO:
+      type: object
+      required:
+        - id
+        - name
+        - isSystem
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isSystem:
+          type: boolean
+        orgUnitId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+        createdAt:
+          $ref: "#/components/schemas/TimestampString"
+        updatedAt:
+          $ref: "#/components/schemas/TimestampString"
+
+    DictionaryCategoryDetailDTO:
+      type: object
+      required:
+        - id
+        - name
+        - isSystem
+        - items
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isSystem:
+          type: boolean
+        orgUnitId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DictionaryItemDTO"
+        createdAt:
+          $ref: "#/components/schemas/TimestampString"
+        updatedAt:
+          $ref: "#/components/schemas/TimestampString"
+
+    DictionaryItemDTO:
+      type: object
+      required:
+        - id
+        - categoryId
+        - label
+        - sortOrder
+        - isDefault
+        - isEnabled
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        categoryId:
+          $ref: "#/components/schemas/UuidString"
+        label:
+          type: string
+        sortOrder:
+          type: integer
+        isDefault:
+          type: boolean
+        isEnabled:
+          type: boolean
+        color:
+          type: string
+          nullable: true
+        createdAt:
+          $ref: "#/components/schemas/TimestampString"
+        updatedAt:
+          $ref: "#/components/schemas/TimestampString"
+
+    CreateCategoryRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        orgUnitId:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+
+    CreateItemRequest:
+      type: object
+      required:
+        - label
+      properties:
+        label:
+          type: string
+        sortOrder:
+          type: integer
+          default: 0
+        isDefault:
+          type: boolean
+          default: false
+        isEnabled:
+          type: boolean
+          default: true
+        color:
+          type: string
+          nullable: true
+
+    UpdateItemRequest:
+      type: object
+      properties:
+        label:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+          nullable: true
+        isDefault:
+          type: boolean
+          nullable: true
+        isEnabled:
+          type: boolean
+          nullable: true
+        color:
+          type: string
+          nullable: true
+
+    ApiResponseDictionaryCategoryDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/DictionaryCategoryDTO"
+
+    ApiResponseDictionaryCategoryDetailDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/DictionaryCategoryDetailDTO"
+
+    ApiResponseDictionaryCategoryList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/DictionaryCategoryDTO"
+
+    ApiResponseDictionaryItemDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/DictionaryItemDTO"
+
+    ApiResponseDictionaryCategoryDetailList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/DictionaryCategoryDetailDTO"

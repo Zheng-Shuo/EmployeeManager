@@ -2,8 +2,9 @@ export interface AppMenuItem {
   key: string;
   label: string;
   path: string;
-  icon: "house" | "users" | "office" | "account" | "shield";
+  icon: "house" | "users" | "office" | "account" | "shield" | "setting" | "notebook";
   permissions?: string[];
+  children?: AppMenuItem[];
 }
 
 export const appMenuItems: AppMenuItem[] = [
@@ -28,17 +29,33 @@ export const appMenuItems: AppMenuItem[] = [
     permissions: ["org:view"],
   },
   {
-    key: "users",
-    label: "账户管理",
-    path: "/users",
-    icon: "account",
-    permissions: ["user:view"],
-  },
-  {
-    key: "roles",
-    label: "角色权限",
-    path: "/roles",
-    icon: "shield",
-    permissions: ["role:view"],
+    key: "system",
+    label: "系统管理",
+    path: "/system",
+    icon: "setting",
+    permissions: ["user:view", "role:view", "dictionary:manage"],
+    children: [
+      {
+        key: "users",
+        label: "账户管理",
+        path: "/users",
+        icon: "account",
+        permissions: ["user:view"],
+      },
+      {
+        key: "roles",
+        label: "角色权限",
+        path: "/roles",
+        icon: "shield",
+        permissions: ["role:view"],
+      },
+      {
+        key: "dictionaries",
+        label: "数据字典",
+        path: "/dictionaries",
+        icon: "notebook",
+        permissions: ["dictionary:manage"],
+      },
+    ],
   },
 ];

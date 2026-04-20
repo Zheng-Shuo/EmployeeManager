@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { ElMessage } from "element-plus";
-import { ArrowDown, OfficeBuilding } from "@element-plus/icons-vue";
+import { ArrowDown } from "@element-plus/icons-vue";
+import { Peoples } from "@icon-park/vue-next";
 import { useRoute, useRouter } from "vue-router";
 
 import { useAuthStore } from "@/stores/auth";
@@ -82,7 +83,15 @@ function navigateTo(path: string | undefined): void {
 <template>
   <div class="app-header">
     <div class="left-zone">
-      <el-icon class="brand-icon"><OfficeBuilding /></el-icon>
+      <Peoples
+        class="brand-icon"
+        theme="outline"
+        size="20"
+        :stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        :fill="['#0f172a', '#e2e8f0']"
+      />
       <span class="brand-name">人事管理系统</span>
       <span class="divider">|</span>
       <el-breadcrumb separator="/" class="header-breadcrumb">
@@ -136,7 +145,7 @@ function navigateTo(path: string | undefined): void {
 }
 
 .brand-icon {
-  color: #0f172a;
+  display: block;
 }
 
 .brand-name {

@@ -6,7 +6,7 @@ description: "Use when running UI or interaction validation with chrome-devtools
 
 - For every login form encountered during chrome-devtools-mcp validation, always autofill and use the system test account credentials:
   - Username: admin
-  - Password: password
+  - Password: 5kuslvhe9n
 - Do not stop at functional checks. During chrome-devtools-mcp validation, always verify both behavior and presentation.
 - Functional validation must cover key user interactions and expected outcomes, including critical success and obvious failure paths.
 - UI validation must include:

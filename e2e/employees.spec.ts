@@ -233,12 +233,48 @@ test.describe("员工列表页面", () => {
     await page.getByRole("button", { name: "新增员工" }).click();
     await expect(page.getByRole("heading", { name: "新增员工" })).toBeVisible();
 
-    await page.getByPlaceholder("请输入工号").fill("EMP-099");
-    await page.getByPlaceholder("请输入姓名").fill("赵六");
-    await page.getByRole("button", { name: "保存" }).click();
+    await page.getByPlaceholder("如 EMP-0001").fill("EMP-099");
+    await page.getByPlaceholder("请输入员工姓名").fill("赵六");
+    await page.getByRole("button", { name: "保存并提交" }).click();
 
     await expect(page.getByText("员工创建成功")).toBeVisible();
     await expect(page.getByText("赵六")).toBeVisible();
+  });
+
+  test("新增员工弹窗在小屏下保持居中且内容区域内部滚动", async ({
+    page,
+  }: {
+    page: Page;
+  }): Promise<void> => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/employees");
+
+    await page.getByRole("button", { name: "新增员工" }).click();
+
+    const dialog = page.locator(".employee-create-dialog");
+    const scrollRegion = page.locator(".dialog-scroll-region");
+
+    await expect(dialog).toBeVisible();
+    await expect(scrollRegion).toBeVisible();
+
+    const scrollMetrics = await scrollRegion.evaluate((element: Element) => {
+      const htmlElement = element as HTMLElement;
+      return {
+        clientHeight: htmlElement.clientHeight,
+        scrollHeight: htmlElement.scrollHeight,
+        overflowY: window.getComputedStyle(htmlElement).overflowY,
+      };
+    });
+
+    expect(scrollMetrics.overflowY).toBe("auto");
+    expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight);
+
+    await scrollRegion.evaluate((element: Element) => {
+      const htmlElement = element as HTMLElement;
+      htmlElement.scrollTop = htmlElement.scrollHeight;
+    });
+
+    await expect(page.getByRole("button", { name: "保存并提交" })).toBeVisible();
   });
 
   test("支持状态筛选和重置", async ({ page }: { page: Page }): Promise<void> => {

@@ -2,11 +2,11 @@ import { computed, reactive, ref } from "vue";
 import type { ComputedRef, Ref } from "vue";
 
 import { createEmployee, createEmployeeMultipart, getEmployees } from "@/api/employees";
-import type { CreateEmployeeRequest, EmployeeDTO, EmployeeStatus } from "@/api/types";
+import type { CreateEmployeeRequest, EmployeeDTO } from "@/api/types";
 
 interface EmployeeFilters {
   keyword: string;
-  status: EmployeeStatus | "";
+  status: string;
 }
 
 interface EmployeePagination {
