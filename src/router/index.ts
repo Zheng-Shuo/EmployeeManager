@@ -5,6 +5,7 @@ import DashboardView from "@/views/DashboardView.vue";
 import DictionariesView from "@/views/DictionariesView.vue";
 import EmployeeDetailView from "@/views/EmployeeDetailView.vue";
 import EmployeesView from "@/views/EmployeesView.vue";
+import FeatureConfigView from "@/views/FeatureConfigView.vue";
 import ForbiddenView from "@/views/ForbiddenView.vue";
 import LoginView from "@/views/LoginView.vue";
 import OrganizationsView from "@/views/OrganizationsView.vue";
@@ -107,6 +108,15 @@ const router = createRouter({
           meta: {
             title: "数据字典",
             permissions: ["dictionary:manage"],
+          },
+        },
+        {
+          path: "feature-config",
+          name: "feature-config",
+          component: FeatureConfigView,
+          meta: {
+            title: "功能配置",
+            permissions: ["user:view", "role:view", "dictionary:manage"],
           },
         },
       ],

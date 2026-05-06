@@ -55,7 +55,7 @@ export function setupResponseInterceptors(): void {
       const status = error.response?.status;
       const requestUrl = originalRequest?.url ?? "";
       const isAuthEndpoint =
-        requestUrl.includes("/api/auth/login") || requestUrl.includes("/api/auth/refresh");
+        requestUrl.includes("/api/v1/auth/login") || requestUrl.includes("/api/v1/auth/refresh");
 
       if (status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
         originalRequest._retry = true;
@@ -82,7 +82,14 @@ export function setupResponseInterceptors(): void {
       }
 
       if (status === 403) {
-        ElMessage.error("无权限访问该资源");
+        const responseData = error.response?.data as
+          | { code?: string; message?: string }
+          | undefined;
+        if (responseData?.code === "AUTH_403_ACCOUNT_LOCKED") {
+          ElMessage.error(responseData.message ?? "账号已被临时锁定，请稍后重试");
+        } else {
+          ElMessage.error(responseData?.message ?? "无权限访问该资源");
+        }
       } else if (status && status >= 400) {
         const message =
           (error.response?.data as { message?: string } | undefined)?.message ??

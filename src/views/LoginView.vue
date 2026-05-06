@@ -7,6 +7,7 @@ import { useRoute, useRouter } from "vue-router";
 import { login } from "@/api/auth";
 import { useAuthStore } from "@/stores/auth";
 import { useDictionaryStore } from "@/stores/dictionary";
+import { useEthnicityStore } from "@/stores/ethnicity";
 
 interface LoginForm {
   username: string;
@@ -17,6 +18,7 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 const dictionaryStore = useDictionaryStore();
+const ethnicityStore = useEthnicityStore();
 const formRef = ref<FormInstance>();
 const loading = ref(false);
 const form = reactive<LoginForm>({
@@ -61,6 +63,7 @@ async function handleLogin(): Promise<void> {
 
     authStore.setLoginData(response.data);
     void dictionaryStore.loadAll();
+    void ethnicityStore.loadAll();
 
     const redirect = typeof route.query.redirect === "string" ? route.query.redirect : "/";
     await router.push(redirect);

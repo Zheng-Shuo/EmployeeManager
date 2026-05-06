@@ -204,6 +204,8 @@ function navigateTo(path: string | undefined): void {
 .user-meta {
   display: grid;
   gap: 1px;
+  justify-items: end;
+  text-align: right;
 }
 
 .user-name {

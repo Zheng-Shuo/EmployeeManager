@@ -11,7 +11,10 @@ import type {
  * Log in with username and password, then get access and refresh tokens.
  */
 export async function login(data: LoginRequest): Promise<ApiResponseLoginResponse> {
-  const { data: response } = await request.post<ApiResponseLoginResponse>("/api/auth/login", data);
+  const { data: response } = await request.post<ApiResponseLoginResponse>(
+    "/api/v1/auth/login",
+    data,
+  );
   return response;
 }
 
@@ -20,7 +23,7 @@ export async function login(data: LoginRequest): Promise<ApiResponseLoginRespons
  */
 export async function refreshToken(data: RefreshRequest): Promise<ApiResponseRefreshResponse> {
   const { data: response } = await request.post<ApiResponseRefreshResponse>(
-    "/api/auth/refresh",
+    "/api/v1/auth/refresh",
     data,
   );
   return response;
@@ -30,12 +33,12 @@ export async function refreshToken(data: RefreshRequest): Promise<ApiResponseRef
  * Revoke the current refresh token and log out.
  */
 export async function logout(data: RefreshRequest): Promise<void> {
-  await request.post("/api/auth/logout", data);
+  await request.post("/api/v1/auth/logout", data);
 }
 
 /**
  * Change password for the current authenticated user.
  */
 export async function changePassword(data: ChangePasswordRequest): Promise<void> {
-  await request.put("/api/auth/password", data);
+  await request.put("/api/v1/auth/password", data);
 }

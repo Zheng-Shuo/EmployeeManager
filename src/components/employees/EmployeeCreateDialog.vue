@@ -11,20 +11,43 @@ import type {
 
 import { getOrganizationTree } from "@/api/organizations";
 import { getPositions } from "@/api/positions";
+import { getRegions } from "@/api/regions";
 import type {
   AssignmentInput,
   CreateEmployeeRequest,
   DictionaryItemDTO,
+  EthnicityDTO,
   Gender,
   OrgUnitTreeNode,
   PositionDTO,
+  RegionDTO,
 } from "@/api/types";
 import { useDictionaryStore } from "@/stores/dictionary";
+import { useEthnicityStore } from "@/stores/ethnicity";
 
 interface CreateEmployeeDialogPayload {
   data: CreateEmployeeRequest;
   photoFile: File | null;
   attachmentFiles: File[];
+}
+
+interface EmployeeCreateForm {
+  employeeNo: string | null;
+  idCardNo: string | null;
+  age: number | null;
+  name: string;
+  gender: Gender | null;
+  birthDate: string | null;
+  phone: string | null;
+  email: string | null;
+  workAddress: string | null;
+  contactAddress: string | null;
+  hireDate: string | null;
+  status: string | null;
+  ethnicity: string | null;
+  politicalStatus: string | null;
+  nativePlace: string | null;
+  employmentType: string | null;
 }
 
 interface Props {
@@ -51,6 +74,24 @@ const orgTreeLoading = ref(false);
 const positionList = ref<PositionDTO[]>([]);
 const positionsLoading = ref(false);
 
+interface RegionOption {
+  value: string;
+  label: string;
+  leaf: boolean;
+}
+
+interface CascaderLazyNode {
+  level: number;
+  value?: string;
+  pathValues?: string[];
+  data?: RegionOption;
+}
+
+const regionOptions = ref<RegionOption[]>([]);
+const regionLoading = ref(false);
+const nativePlacePath = ref<string[]>([]);
+const nativePlaceCascaderKey = ref(0);
+
 // ── Assignment fields ──
 const selectedOrgUnitId = ref<string | null>(null);
 const selectedPositionId = ref<string | null>(null);
@@ -58,7 +99,7 @@ const selectedPositionId = ref<string | null>(null);
 // ── Age as string for controlled input ──
 const ageInput = ref<string>("");
 
-const form = reactive<CreateEmployeeRequest>({
+const form = reactive<EmployeeCreateForm>({
   employeeNo: null,
   idCardNo: null,
   age: null,
@@ -67,15 +108,18 @@ const form = reactive<CreateEmployeeRequest>({
   birthDate: null,
   phone: null,
   email: null,
-  address: null,
+  workAddress: null,
+  contactAddress: null,
   hireDate: null,
   status: null,
   ethnicity: null,
   politicalStatus: null,
+  nativePlace: null,
   employmentType: null,
 });
 
 const dictionaryStore = useDictionaryStore();
+const ethnicityStore = useEthnicityStore();
 
 const statusOptions = computed(() =>
   dictionaryStore.getItemsByName("员工状态").map((item: DictionaryItemDTO) => ({
@@ -90,11 +134,70 @@ const employmentTypeOptions = computed(() =>
     value: item.id,
   })),
 );
+const ethnicityKeyword = ref("");
+const ethnicityOptions = computed(() =>
+  ethnicityStore.searchEnabledItems(ethnicityKeyword.value).map((item: EthnicityDTO) => ({
+    label: item.name,
+    value: item.id,
+  })),
+);
 
 const genderOptions: Array<{ label: string; value: Gender }> = [
   { label: "男", value: "MALE" },
   { label: "女", value: "FEMALE" },
 ];
+
+function toRegionOption(region: RegionDTO): RegionOption {
+  return {
+    value: region.code,
+    label: region.name,
+    leaf: region.level >= 3,
+  };
+}
+
+async function loadRegionChildren(parentCode?: string): Promise<RegionOption[]> {
+  const response = await getRegions(parentCode ? { parentCode } : { level: 1 });
+  return response.data.map((region: RegionDTO) => toRegionOption(region));
+}
+
+async function loadRegionRoots(): Promise<void> {
+  regionLoading.value = true;
+  try {
+    regionOptions.value = await loadRegionChildren();
+  } finally {
+    regionLoading.value = false;
+  }
+}
+
+const nativePlaceCascaderProps = {
+  lazy: true,
+  emitPath: true,
+  lazyLoad: async (
+    node: CascaderLazyNode,
+    resolve: (children: RegionOption[]) => void,
+  ): Promise<void> => {
+    if (node.level === 0) {
+      resolve(regionOptions.value);
+      return;
+    }
+
+    if (!node.value) {
+      resolve([]);
+      return;
+    }
+
+    const children = await loadRegionChildren(node.value);
+
+    if (children.length === 0) {
+      if (node.data) {
+        node.data.leaf = true;
+      }
+      nativePlacePath.value = [...(node.pathValues ?? [node.value])];
+    }
+
+    resolve(children);
+  },
+};
 
 // ── ID card validation ──
 const ID_CARD_WEIGHTS = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
@@ -179,7 +282,7 @@ const isFormValid = computed((): boolean => {
   );
 });
 
-const rules: FormRules<CreateEmployeeRequest> = {
+const rules: FormRules<EmployeeCreateForm> = {
   name: [{ required: true, message: "请输入姓名", trigger: "blur" }],
   idCardNo: [
     { required: true, message: "请输入身份证号", trigger: "blur" },
@@ -258,6 +361,10 @@ watch(selectedOrgUnitId, (nextOrgId: string | null): void => {
   }
 });
 
+watch(nativePlacePath, (path: string[]): void => {
+  form.nativePlace = path.length > 0 ? (path[path.length - 1] ?? null) : null;
+});
+
 function normalizeDate(value: string | null | undefined): string | null {
   if (!value) {
     return null;
@@ -296,16 +403,21 @@ function resetForm(): void {
   form.birthDate = null;
   form.phone = null;
   form.email = null;
-  form.address = null;
+  form.workAddress = null;
+  form.contactAddress = null;
   form.hireDate = null;
   form.status = null;
   form.ethnicity = null;
   form.politicalStatus = null;
+  form.nativePlace = null;
   form.employmentType = null;
   selectedOrgUnitId.value = null;
   selectedPositionId.value = null;
   positionList.value = [];
   ageInput.value = "";
+  nativePlacePath.value = [];
+  regionOptions.value = [];
+  nativePlaceCascaderKey.value += 1;
 
   if (photoPreviewUrl.value) {
     URL.revokeObjectURL(photoPreviewUrl.value);
@@ -317,6 +429,11 @@ function resetForm(): void {
   photoUploadRef.value?.clearFiles();
   attachmentsUploadRef.value?.clearFiles();
   formRef.value?.clearValidate();
+  ethnicityKeyword.value = "";
+}
+
+function handleEthnicitySearch(query: string): void {
+  ethnicityKeyword.value = query;
 }
 
 onBeforeUnmount((): void => {
@@ -371,6 +488,10 @@ function removeAttachment(file: UploadUserFile): void {
 watch(visible, (nextVisible: boolean): void => {
   if (nextVisible) {
     void loadOrgTree();
+    void loadRegionRoots();
+    if (!ethnicityStore.loaded) {
+      void ethnicityStore.loadAll();
+    }
     setDefaultValues();
   } else {
     resetForm();
@@ -403,19 +524,21 @@ async function handleSubmit(): Promise<void> {
     data: {
       ...form,
       employeeNo: form.employeeNo?.trim() || null,
-      idCardNo: form.idCardNo?.trim() || null,
-      age: form.age ?? null,
+      idCardNo: form.idCardNo!.trim(),
+      age: form.age!,
       name: form.name.trim(),
-      gender: form.gender || null,
-      birthDate: normalizeDate(form.birthDate),
+      gender: form.gender!,
+      birthDate: normalizeDate(form.birthDate)!,
       phone: form.phone?.trim() || null,
       email: form.email?.trim() || null,
-      address: form.address?.trim() || null,
-      hireDate: normalizeDate(form.hireDate),
+      workAddress: form.workAddress?.trim() || null,
+      contactAddress: form.contactAddress?.trim() || null,
+      hireDate: normalizeDate(form.hireDate)!,
       status: form.status || null,
-      ethnicity: form.ethnicity?.trim() || null,
+      ethnicity: form.ethnicity || null,
       politicalStatus: form.politicalStatus?.trim() || null,
-      employmentType: form.employmentType || null,
+      nativePlace: form.nativePlace || null,
+      employmentType: form.employmentType!,
       assignments,
     },
     photoFile: photoFile.value,
@@ -529,7 +652,21 @@ async function handleSubmit(): Promise<void> {
                 </el-col>
                 <el-col :xs="24" :sm="12">
                   <el-form-item label="民族">
-                    <el-input v-model="form.ethnicity" placeholder="请输入民族" />
+                    <el-select
+                      v-model="form.ethnicity"
+                      placeholder="请选择民族"
+                      clearable
+                      filterable
+                      :filter-method="handleEthnicitySearch"
+                      class="full-width"
+                    >
+                      <el-option
+                        v-for="option in ethnicityOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                      />
+                    </el-select>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -537,6 +674,21 @@ async function handleSubmit(): Promise<void> {
                 <el-col :xs="24" :sm="12">
                   <el-form-item label="工号">
                     <el-input v-model="form.employeeNo" placeholder="请输入工号" />
+                  </el-form-item>
+                </el-col>
+                <el-col :xs="24" :sm="12">
+                  <el-form-item label="籍贯">
+                    <el-cascader
+                      :key="nativePlaceCascaderKey"
+                      v-model="nativePlacePath"
+                      :options="regionOptions"
+                      :props="nativePlaceCascaderProps"
+                      :loading="regionLoading"
+                      placeholder="请选择省/市/区"
+                      clearable
+                      filterable
+                      class="full-width"
+                    />
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -637,8 +789,8 @@ async function handleSubmit(): Promise<void> {
           </el-row>
           <el-row :gutter="16">
             <el-col :span="24">
-              <el-form-item label="工作地点">
-                <el-input v-model="form.address" placeholder="请输入工作地址" />
+              <el-form-item label="工作地址">
+                <el-input v-model="form.workAddress" placeholder="请输入工作地址" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -656,6 +808,13 @@ async function handleSubmit(): Promise<void> {
             <el-col :xs="24" :sm="12">
               <el-form-item label="工作邮箱" prop="email">
                 <el-input v-model="form.email" placeholder="请输入工作邮箱" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="16">
+            <el-col :span="24">
+              <el-form-item label="联系地址">
+                <el-input v-model="form.contactAddress" placeholder="请输入联系地址" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -724,6 +883,14 @@ async function handleSubmit(): Promise<void> {
 }
 
 :deep(.full-width.el-date-editor) {
+  width: 100%;
+}
+
+:deep(.full-width.el-cascader) {
+  width: 100%;
+}
+
+:deep(.full-width.el-cascader .el-input) {
   width: 100%;
 }
 

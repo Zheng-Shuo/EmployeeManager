@@ -2,7 +2,7 @@ export type UuidString = string;
 export type TimestampString = string;
 export type DateString = string;
 
-export type UserStatus = "ACTIVE" | "DISABLED";
+export type UserStatus = string;
 export type Gender = "MALE" | "FEMALE";
 
 export interface ApiResponseMeta {
@@ -36,6 +36,8 @@ export type ApiResponseOrgUnitDTOList = ApiResponse<OrgUnitDTO[]>;
 export type ApiResponseOrgUnitTreeNodeList = ApiResponse<OrgUnitTreeNode[]>;
 export type ApiResponsePositionDTO = ApiResponse<PositionDTO>;
 export type ApiResponsePositionDTOList = ApiResponse<PositionDTO[]>;
+export type ApiResponseEthnicityDTO = ApiResponse<EthnicityDTO>;
+export type ApiResponseEthnicityDTOList = ApiResponse<EthnicityDTO[]>;
 
 export interface LoginRequest {
   username: string;
@@ -70,7 +72,8 @@ export interface UserDTO {
   id: UuidString;
   username: string;
   roles: string[];
-  status: UserStatus;
+  status: string;
+  statusLabel: string;
   forcePasswordChange: boolean;
   createdAt: TimestampString;
   updatedAt: TimestampString;
@@ -87,7 +90,8 @@ export interface UpdateUsernameRequest {
 }
 
 export interface ResetPasswordResponse {
-  temporaryPassword: string;
+  success: boolean;
+  message: string;
 }
 
 export interface RoleDTO {
@@ -135,12 +139,15 @@ export interface EmployeeDTO {
   birthDate: DateString;
   phone: string | null;
   email: string | null;
-  address: string | null;
+  workAddress: string | null;
+  contactAddress: string | null;
   photoPath: string | null;
   hireDate: DateString;
   status: string;
   ethnicity: string | null;
   politicalStatus: string | null;
+  education: string | null;
+  nativePlace: string | null;
   employmentType: string;
   createdAt: TimestampString;
   updatedAt: TimestampString;
@@ -182,36 +189,43 @@ export interface AssignmentInput {
 
 export interface CreateEmployeeRequest {
   name: string;
-  idCardNo?: string | null;
-  age?: number | null;
-  gender?: Gender | null;
-  birthDate?: DateString | null;
-  hireDate?: DateString | null;
-  employmentType?: string | null;
+  idCardNo: string;
+  age: number;
+  gender: Gender;
+  birthDate: DateString;
+  hireDate: DateString;
+  employmentType: string;
   employeeNo?: string | null;
   phone?: string | null;
   email?: string | null;
-  address?: string | null;
+  workAddress?: string | null;
+  contactAddress?: string | null;
   status?: string | null;
   ethnicity?: string | null;
   politicalStatus?: string | null;
+  education?: string | null;
+  nativePlace?: string | null;
   assignments?: AssignmentInput[];
 }
 
 export interface UpdateEmployeeRequest {
   name: string;
-  idCardNo?: string | null;
-  age?: number | null;
-  gender?: string | null;
-  birthDate?: DateString | null;
+  idCardNo: string;
+  age: number;
+  gender: Gender;
+  birthDate: DateString;
+  employeeNo?: string | null;
   phone?: string | null;
   email?: string | null;
-  address?: string | null;
-  hireDate?: DateString | null;
+  workAddress?: string | null;
+  contactAddress?: string | null;
+  hireDate: DateString;
   status?: string | null;
   ethnicity?: string | null;
   politicalStatus?: string | null;
-  employmentType?: string | null;
+  education?: string | null;
+  nativePlace?: string | null;
+  employmentType: string;
   assignments?: AssignmentInput[];
 }
 
@@ -248,7 +262,7 @@ export interface UpdateOrgUnitRequest {
 }
 
 export interface MoveOrgUnitRequest {
-  newParentId: UuidString | null;
+  parentId: UuidString | null;
 }
 
 export interface PositionDTO {
@@ -268,8 +282,19 @@ export interface CreatePositionRequest {
 }
 
 export interface UpdatePositionRequest {
-  name: string;
+  name?: string;
   description?: string | null;
+}
+
+export interface EthnicityDTO {
+  id: UuidString;
+  name: string;
+  romanizedName: string;
+  alphaCode: string;
+  numericCode: string;
+  isSystem: boolean;
+  isEnabled: boolean;
+  sortOrder: number;
 }
 
 // ── 数据字典 ──────────────────────────────────────────────────────
@@ -334,5 +359,40 @@ export type ApiResponseDictionaryCategoryDetailDTOList = ApiResponse<DictionaryC
 export type ApiResponseDictionaryItemDTO = ApiResponse<DictionaryItemDTO>;
 
 export interface UpdateUserStatusRequest {
-  status: UserStatus;
+  status: string;
 }
+
+// ── 员工列表列布局偏好 ───────────────────────────────────────────
+
+export interface EmployeeListColumnConfig {
+  fieldKey: string;
+  visible: boolean;
+  order: number;
+  width?: number | null;
+}
+
+export interface EmployeeListPreferenceDTO {
+  userId: UuidString;
+  columns: EmployeeListColumnConfig[];
+  updatedAt: TimestampString;
+}
+
+export interface UpdateEmployeeListPreferenceRequest {
+  columns: EmployeeListColumnConfig[];
+}
+
+export type ApiResponseEmployeeListPreferenceDTO = ApiResponse<EmployeeListPreferenceDTO>;
+
+// ── 行政区划 ─────────────────────────────────────────────────────
+
+export interface RegionDTO {
+  id: UuidString;
+  code: string;
+  name: string;
+  fullName: string;
+  level: number;
+  parentCode: string | null;
+}
+
+export type ApiResponseRegionDTO = ApiResponse<RegionDTO>;
+export type ApiResponseRegionDTOList = ApiResponse<RegionDTO[]>;

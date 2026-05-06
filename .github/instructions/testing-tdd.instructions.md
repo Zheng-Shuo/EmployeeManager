@@ -10,6 +10,7 @@ applyTo:
 
 - Core logic such as utility functions, Pinia stores, router guards, and API data transformation must have Vitest unit coverage.
 - Core page flows and complex component interactions such as form validation, route redirects, modal behavior, and permission-driven rendering must have Playwright coverage as component or end-to-end tests.
+- For any form submission flow, tests must explicitly verify: submit is disabled on initial render, remains disabled when validation fails, becomes enabled only after validation passes, and shows the expected loading or submission state while submitting.
 - Every feature change should include test updates in the same task. Do not leave test coverage as follow-up work unless the user explicitly accepts that tradeoff.
 - Before suggesting a git commit, remind the user to run the relevant test suite and make it clear whether pnpm test:unit, pnpm test:e2e, or both are expected.
 - Prefer focused tests around changed behavior instead of broad snapshot-style coverage.

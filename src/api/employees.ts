@@ -1,9 +1,10 @@
 import request from "@/utils/request";
 import type {
-  ApiResponseEmployeeDTO,
   ApiResponseEmployeeDetailDTO,
+  ApiResponseEmployeeListPreferenceDTO,
   ApiResponsePageResponseEmployeeDTO,
   CreateEmployeeRequest,
+  UpdateEmployeeListPreferenceRequest,
   UpdateEmployeeRequest,
   UuidString,
 } from "./types";
@@ -12,7 +13,32 @@ export interface GetEmployeesParams {
   page?: number;
   size?: number;
   keyword?: string;
+  employeeNo?: string;
+  name?: string;
+  idCardNo?: string;
+  phone?: string;
+  email?: string;
+  workAddress?: string;
+  contactAddress?: string;
+  statuses?: string[];
   status?: string;
+  genders?: string[];
+  gender?: string;
+  employmentTypes?: string[];
+  employmentType?: string;
+  educations?: string[];
+  ethnicities?: string[];
+  politicalStatuses?: string[];
+  nativePlaces?: string[];
+  primaryOrgUnitIds?: string[];
+  primaryPositionIds?: string[];
+  ageMin?: number;
+  ageMax?: number;
+  birthDateFrom?: string;
+  birthDateTo?: string;
+  hireDateFrom?: string;
+  hireDateTo?: string;
+  sort?: string[];
 }
 
 export interface CreateEmployeeWithFilesPayload {
@@ -50,7 +76,7 @@ export async function getEmployees(
   params?: GetEmployeesParams,
 ): Promise<ApiResponsePageResponseEmployeeDTO> {
   const { data: response } = await request.get<ApiResponsePageResponseEmployeeDTO>(
-    "/api/employees",
+    "/api/v1/employees",
     { params },
   );
   return response;
@@ -59,8 +85,13 @@ export async function getEmployees(
 /**
  * Create an employee.
  */
-export async function createEmployee(data: CreateEmployeeRequest): Promise<ApiResponseEmployeeDTO> {
-  const { data: response } = await request.post<ApiResponseEmployeeDTO>("/api/employees", data);
+export async function createEmployee(
+  data: CreateEmployeeRequest,
+): Promise<ApiResponseEmployeeDetailDTO> {
+  const { data: response } = await request.post<ApiResponseEmployeeDetailDTO>(
+    "/api/v1/employees",
+    data,
+  );
   return response;
 }
 
@@ -69,7 +100,7 @@ export async function createEmployee(data: CreateEmployeeRequest): Promise<ApiRe
  */
 export async function createEmployeeMultipart(
   payload: CreateEmployeeWithFilesPayload,
-): Promise<ApiResponseEmployeeDTO> {
+): Promise<ApiResponseEmployeeDetailDTO> {
   const formData = new FormData();
 
   appendFormDataField(formData, "employeeNo", payload.data.employeeNo);
@@ -80,11 +111,14 @@ export async function createEmployeeMultipart(
   appendFormDataField(formData, "birthDate", payload.data.birthDate);
   appendFormDataField(formData, "phone", payload.data.phone);
   appendFormDataField(formData, "email", payload.data.email);
-  appendFormDataField(formData, "address", payload.data.address);
+  appendFormDataField(formData, "workAddress", payload.data.workAddress);
+  appendFormDataField(formData, "contactAddress", payload.data.contactAddress);
   appendFormDataField(formData, "hireDate", payload.data.hireDate);
   appendFormDataField(formData, "status", payload.data.status);
   appendFormDataField(formData, "ethnicity", payload.data.ethnicity);
   appendFormDataField(formData, "politicalStatus", payload.data.politicalStatus);
+  appendFormDataField(formData, "education", payload.data.education);
+  appendFormDataField(formData, "nativePlace", payload.data.nativePlace);
   appendFormDataField(formData, "employmentType", payload.data.employmentType);
   appendFormDataField(formData, "assignments", payload.data.assignments);
 
@@ -96,7 +130,10 @@ export async function createEmployeeMultipart(
     formData.append("attachments", attachment);
   }
 
-  const { data: response } = await request.post<ApiResponseEmployeeDTO>("/api/employees", formData);
+  const { data: response } = await request.post<ApiResponseEmployeeDetailDTO>(
+    "/api/v1/employees",
+    formData,
+  );
   return response;
 }
 
@@ -105,7 +142,7 @@ export async function createEmployeeMultipart(
  */
 export async function getEmployeeById(id: UuidString): Promise<ApiResponseEmployeeDetailDTO> {
   const { data: response } = await request.get<ApiResponseEmployeeDetailDTO>(
-    `/api/employees/${id}`,
+    `/api/v1/employees/${id}`,
   );
   return response;
 }
@@ -116,9 +153,9 @@ export async function getEmployeeById(id: UuidString): Promise<ApiResponseEmploy
 export async function updateEmployee(
   id: UuidString,
   data: UpdateEmployeeRequest,
-): Promise<ApiResponseEmployeeDTO> {
-  const { data: response } = await request.put<ApiResponseEmployeeDTO>(
-    `/api/employees/${id}`,
+): Promise<ApiResponseEmployeeDetailDTO> {
+  const { data: response } = await request.put<ApiResponseEmployeeDetailDTO>(
+    `/api/v1/employees/${id}`,
     data,
   );
   return response;
@@ -130,9 +167,10 @@ export async function updateEmployee(
 export async function updateEmployeeMultipart(
   id: UuidString,
   payload: UpdateEmployeeWithFilesPayload,
-): Promise<ApiResponseEmployeeDTO> {
+): Promise<ApiResponseEmployeeDetailDTO> {
   const formData = new FormData();
 
+  appendFormDataField(formData, "employeeNo", payload.data.employeeNo);
   appendFormDataField(formData, "name", payload.data.name);
   appendFormDataField(formData, "idCardNo", payload.data.idCardNo);
   appendFormDataField(formData, "age", payload.data.age);
@@ -140,11 +178,14 @@ export async function updateEmployeeMultipart(
   appendFormDataField(formData, "birthDate", payload.data.birthDate);
   appendFormDataField(formData, "phone", payload.data.phone);
   appendFormDataField(formData, "email", payload.data.email);
-  appendFormDataField(formData, "address", payload.data.address);
+  appendFormDataField(formData, "workAddress", payload.data.workAddress);
+  appendFormDataField(formData, "contactAddress", payload.data.contactAddress);
   appendFormDataField(formData, "hireDate", payload.data.hireDate);
   appendFormDataField(formData, "status", payload.data.status);
   appendFormDataField(formData, "ethnicity", payload.data.ethnicity);
   appendFormDataField(formData, "politicalStatus", payload.data.politicalStatus);
+  appendFormDataField(formData, "education", payload.data.education);
+  appendFormDataField(formData, "nativePlace", payload.data.nativePlace);
   appendFormDataField(formData, "employmentType", payload.data.employmentType);
   appendFormDataField(formData, "assignments", payload.data.assignments);
 
@@ -156,8 +197,8 @@ export async function updateEmployeeMultipart(
     formData.append("attachments", attachment);
   }
 
-  const { data: response } = await request.put<ApiResponseEmployeeDTO>(
-    `/api/employees/${id}`,
+  const { data: response } = await request.put<ApiResponseEmployeeDetailDTO>(
+    `/api/v1/employees/${id}`,
     formData,
   );
   return response;
@@ -167,5 +208,38 @@ export async function updateEmployeeMultipart(
  * Delete an employee.
  */
 export async function deleteEmployee(id: UuidString): Promise<void> {
-  await request.delete(`/api/employees/${id}`);
+  await request.delete(`/api/v1/employees/${id}`);
+}
+
+/**
+ * Get the current user's employee list column layout preference.
+ */
+export async function getEmployeeListPreference(): Promise<ApiResponseEmployeeListPreferenceDTO> {
+  const { data: response } = await request.get<ApiResponseEmployeeListPreferenceDTO>(
+    "/api/v1/employees/preferences/list-layout",
+  );
+  return response;
+}
+
+/**
+ * Save the current user's employee list column layout preference.
+ */
+export async function saveEmployeeListPreference(
+  data: UpdateEmployeeListPreferenceRequest,
+): Promise<ApiResponseEmployeeListPreferenceDTO> {
+  const { data: response } = await request.put<ApiResponseEmployeeListPreferenceDTO>(
+    "/api/v1/employees/preferences/list-layout",
+    data,
+  );
+  return response;
+}
+
+/**
+ * Reset the current user's employee list column layout preference to system default.
+ */
+export async function resetEmployeeListPreference(): Promise<ApiResponseEmployeeListPreferenceDTO> {
+  const { data: response } = await request.delete<ApiResponseEmployeeListPreferenceDTO>(
+    "/api/v1/employees/preferences/list-layout",
+  );
+  return response;
 }

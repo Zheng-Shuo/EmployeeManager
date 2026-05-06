@@ -7,6 +7,7 @@ applyTo: "src/**/*.vue"
 
 - Do not stop at code generation for UI tasks. Validate the rendered result in a running local development server with Chrome DevTools MCP.
 - Inspect the DOM tree to confirm the expected Element Plus structure, text, and state-driven visibility are present.
+- For dialogs and modals, verify they are vertically centered in the viewport, remain stable during page scroll, and keep header or footer fixed when body content scroll is required.
 - Check the browser console for Vue warnings, runtime errors, and hydration or reactivity issues.
 - Check the network panel for API requests related to the changed screen, including request path, status, and obvious contract mismatches.
 - If the local server is unavailable, state that validation is blocked and say what remains unverified.

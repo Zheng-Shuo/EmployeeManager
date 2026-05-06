@@ -34,21 +34,24 @@ Last updated: 2026-04-20
 - Employee filters run in change-to-search mode: status changes trigger immediate reload and keyword input triggers debounced reload.
 - Employee detail interaction is route-based via src/views/EmployeeDetailView.vue (`/employees/:id`) instead of a drawer.
 - The current employee flow supports keyword search, status filtering, refresh, pagination, creation, and detail viewing through getEmployees, createEmployee, and getEmployeeById.
+- Employee table columns now support user-level configuration for visibility and order, persisted in localStorage via src/composables/useEmployeeListColumnsConfig.ts.
+- EmployeeCreateDialog now captures nativePlace via province/city/district cascader (Element Plus Cascader + /api/v1/regions lazy loading) and submits the final district code as nativePlace.
 
 ## Routing
 
-| Path           | Name            | Component                        | Notes                                                        |
-| -------------- | --------------- | -------------------------------- | ------------------------------------------------------------ |
-| /login         | login           | src/views/LoginView.vue          | Public route. Authenticated users redirect to home.          |
-| /403           | forbidden       | src/views/ForbiddenView.vue      | Public forbidden screen.                                     |
-| /              | dashboard       | src/views/DashboardView.vue      | Wrapped by MainLayout and requires auth.                     |
-| /employees     | employees       | src/views/EmployeesView.vue      | Requires employee:view.                                      |
-| /employees/:id | employee-detail | src/views/EmployeeDetailView.vue | Requires employee:view. Route-based detail page.             |
-| /organizations | organizations   | src/views/OrganizationsView.vue  | Requires org:view.                                           |
-| /users         | users           | src/views/UsersView.vue          | Requires user:view.                                          |
-| /roles         | roles           | src/views/RolesView.vue          | Requires role:view.                                          |
-| /profile       | profile         | src/views/ProfileView.vue        | Requires auth. Current page is a mock profile editor UI.     |
-| /dictionaries  | dictionaries    | src/views/DictionariesView.vue   | Requires dictionary:manage. Dictionary category + item CRUD. |
+| Path            | Name            | Component                        | Notes                                                                                   |
+| --------------- | --------------- | -------------------------------- | --------------------------------------------------------------------------------------- |
+| /login          | login           | src/views/LoginView.vue          | Public route. Authenticated users redirect to home.                                     |
+| /403            | forbidden       | src/views/ForbiddenView.vue      | Public forbidden screen.                                                                |
+| /               | dashboard       | src/views/DashboardView.vue      | Wrapped by MainLayout and requires auth.                                                |
+| /employees      | employees       | src/views/EmployeesView.vue      | Requires employee:view.                                                                 |
+| /employees/:id  | employee-detail | src/views/EmployeeDetailView.vue | Requires employee:view. Route-based detail page.                                        |
+| /organizations  | organizations   | src/views/OrganizationsView.vue  | Requires org:view.                                                                      |
+| /users          | users           | src/views/UsersView.vue          | Requires user:view.                                                                     |
+| /roles          | roles           | src/views/RolesView.vue          | Requires role:view.                                                                     |
+| /profile        | profile         | src/views/ProfileView.vue        | Requires auth. Current page is a mock profile editor UI.                                |
+| /dictionaries   | dictionaries    | src/views/DictionariesView.vue   | Requires dictionary:manage. Dictionary category + item CRUD.                            |
+| /feature-config | feature-config  | src/views/FeatureConfigView.vue  | Requires user:view or role:view or dictionary:manage. Configures employee list columns. |
 
 Guard behavior in src/router/guards.ts:
 
@@ -95,20 +98,36 @@ Responsibilities:
 - Provide getDefaultItemId(categoryCode) to get the first enabled item's UUID.
 - Support reload() for manual refresh after dictionary mutations.
 
+### ethnicity store
+
+File: src/stores/ethnicity.ts
+
+Responsibilities:
+
+- Cache ethnicity list from /api/v1/ethnicities.
+- Provide searchEnabledItems(keyword) for local fuzzy search across name, romanizedName, alphaCode, and numericCode.
+- Provide getNameById(id) for UUID-to-ethnicity-name mapping in employee forms and detail pages.
+- Support reload() for manual refresh.
+
 ## API Layer
 
 - Shared HTTP client lives in src/utils/request.ts.
 - Authorization headers are attached from stored accessToken.
 - A 401 response triggers refresh-token logic for non-refresh requests. Refresh failure falls back to logout.
 - API modules are split by domain in src/api: auth, users, roles, employees, organizations, positions, and dictionaries.
+- API modules include ethnicities for ethnicity list and detail queries.
 - Shared request and response types live in src/api/types.ts.
 - openapi.yaml is the contract source for backend endpoints and payload shapes. Keep manual TypeScript interfaces aligned with it.
+- API base path is /api/v1 for all domain modules.
+- resetUserPassword response no longer includes temporaryPassword; UI should display backend message only.
+- request interceptor handles AUTH_403_ACCOUNT_LOCKED with a dedicated lockout message.
 
 ## Dictionary-Driven Architecture
 
 - Employee status and org unit type values are no longer hardcoded enums. They are fetched from the backend Dictionary API and cached in the dictionary Pinia store.
 - Dictionary categories are identified by code (e.g. "employee_status", "employment_type", "org_unit_type"). Each category contains sorted, enabled items with id (UUID)/code/label/color.
 - The dictionary store is preloaded (fire-and-forget) on login in LoginView. Components consume it synchronously via getters.
+- LoginView preloads both dictionary and ethnicity stores in fire-and-forget mode after successful login.
 - Components that previously used hardcoded EmployeeStatus or OrgUnitType options now compute options from dictionaryStore.getItemsByCode.
 - Status and employmentType fields in API payloads use **UUID values** (dictionary item id), not code strings. Components use getLabelById/getColorById for display.
 - Gender and UserStatus remain hardcoded enums since they are not dictionary-managed.
@@ -126,7 +145,7 @@ Responsibilities:
 - Route-level permissions live in route meta.
 - Sidebar visibility is permission-aware and driven by src/config/menu.ts. Menu supports nested groups (children) for submenu rendering.
 - Prefer hasAnyPermission for multi-permission checks so route rules and menu rules stay consistent.
-- The "系统管理" submenu groups 账户管理 (user:view), 角色权限 (role:view), and 数据字典 (dictionary:manage).
+- The "系统管理" submenu groups 账户管理 (user:view), 角色权限 (role:view), 数据字典 (dictionary:manage), and 功能配置 (user:view/role:view/dictionary:manage).
 
 ## Testing Baseline
 

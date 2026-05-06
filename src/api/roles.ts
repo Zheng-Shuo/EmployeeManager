@@ -12,7 +12,7 @@ import type {
  * Get role list.
  */
 export async function getRoles(): Promise<ApiResponseRoleDTOList> {
-  const { data: response } = await request.get<ApiResponseRoleDTOList>("/api/roles");
+  const { data: response } = await request.get<ApiResponseRoleDTOList>("/api/v1/roles");
   return response;
 }
 
@@ -20,7 +20,7 @@ export async function getRoles(): Promise<ApiResponseRoleDTOList> {
  * Create a role.
  */
 export async function createRole(data: CreateRoleRequest): Promise<ApiResponseRoleDetailDTO> {
-  const { data: response } = await request.post<ApiResponseRoleDetailDTO>("/api/roles", data);
+  const { data: response } = await request.post<ApiResponseRoleDetailDTO>("/api/v1/roles", data);
   return response;
 }
 
@@ -28,7 +28,7 @@ export async function createRole(data: CreateRoleRequest): Promise<ApiResponseRo
  * Get role details by id.
  */
 export async function getRoleById(id: UuidString): Promise<ApiResponseRoleDetailDTO> {
-  const { data: response } = await request.get<ApiResponseRoleDetailDTO>(`/api/roles/${id}`);
+  const { data: response } = await request.get<ApiResponseRoleDetailDTO>(`/api/v1/roles/${id}`);
   return response;
 }
 
@@ -39,7 +39,10 @@ export async function updateRole(
   id: UuidString,
   data: UpdateRoleRequest,
 ): Promise<ApiResponseRoleDetailDTO> {
-  const { data: response } = await request.put<ApiResponseRoleDetailDTO>(`/api/roles/${id}`, data);
+  const { data: response } = await request.patch<ApiResponseRoleDetailDTO>(
+    `/api/v1/roles/${id}`,
+    data,
+  );
   return response;
 }
 
@@ -47,13 +50,13 @@ export async function updateRole(
  * Delete a role.
  */
 export async function deleteRole(id: UuidString): Promise<void> {
-  await request.delete(`/api/roles/${id}`);
+  await request.delete(`/api/v1/roles/${id}`);
 }
 
 /**
  * Get permission list.
  */
 export async function getPermissions(): Promise<ApiResponsePermissionDTOList> {
-  const { data: response } = await request.get<ApiResponsePermissionDTOList>("/api/permissions");
+  const { data: response } = await request.get<ApiResponsePermissionDTOList>("/api/v1/permissions");
   return response;
 }

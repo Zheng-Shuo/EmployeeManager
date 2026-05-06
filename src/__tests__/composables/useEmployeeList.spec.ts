@@ -1,29 +1,39 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useEmployeeList } from "@/composables/useEmployeeList";
-import { createEmployee, getEmployees } from "@/api/employees";
+import { createEmployee, createEmployeeMultipart, getEmployees } from "@/api/employees";
 import type { EmployeeDTO } from "@/api/types";
 
 vi.mock("@/api/employees", () => ({
   createEmployee: vi.fn(),
+  createEmployeeMultipart: vi.fn(),
   getEmployees: vi.fn(),
 }));
 
 const mockedGetEmployees = vi.mocked(getEmployees);
 const mockedCreateEmployee = vi.mocked(createEmployee);
+const mockedCreateEmployeeMultipart = vi.mocked(createEmployeeMultipart);
 
 function makeEmployee(overrides: Partial<EmployeeDTO> = {}): EmployeeDTO {
   return {
     id: "employee-1",
     employeeNo: "EMP-001",
+    idCardNo: "110101199001011234",
+    age: 35,
     name: "张三",
-    gender: "男",
+    gender: "MALE",
     birthDate: "1990-01-01",
     phone: "13800000000",
     email: "zhangsan@example.com",
-    address: "上海市",
+    workAddress: "上海市浦东新区",
+    contactAddress: "上海市徐汇区",
     hireDate: "2024-01-10",
-    status: "ACTIVE",
+    status: "00000000-0000-0000-0000-000000000111",
+    ethnicity: "汉族",
+    politicalStatus: "群众",
+    education: "00000000-0000-0000-0000-000000000311",
+    nativePlace: "310101",
+    employmentType: "00000000-0000-0000-0000-000000000211",
     createdAt: "2026-01-01 10:00:00",
     updatedAt: "2026-01-02 10:00:00",
     ...overrides,
@@ -51,6 +61,12 @@ describe("useEmployeeList", () => {
       message: "OK",
       data: makeEmployee(),
     });
+    mockedCreateEmployeeMultipart.mockResolvedValue({
+      success: true,
+      code: "SUCCESS",
+      message: "OK",
+      data: makeEmployee(),
+    });
   });
 
   it("loads employees with default pagination", async (): Promise<void> => {
@@ -63,6 +79,8 @@ describe("useEmployeeList", () => {
       size: 10,
       keyword: undefined,
       status: undefined,
+      gender: undefined,
+      employmentType: undefined,
     });
     expect(employeeList.employees.value).toHaveLength(1);
     expect(employeeList.pagination.total).toBe(1);
@@ -81,6 +99,8 @@ describe("useEmployeeList", () => {
       size: 10,
       keyword: "EMP-001",
       status: "ACTIVE",
+      gender: undefined,
+      employmentType: undefined,
     });
     expect(employeeList.pagination.page).toBe(1);
   });
@@ -99,6 +119,8 @@ describe("useEmployeeList", () => {
       size: 10,
       keyword: undefined,
       status: undefined,
+      gender: undefined,
+      employmentType: undefined,
     });
   });
 
@@ -113,6 +135,8 @@ describe("useEmployeeList", () => {
       size: 20,
       keyword: undefined,
       status: undefined,
+      gender: undefined,
+      employmentType: undefined,
     });
     expect(employeeList.pagination.size).toBe(10);
   });
@@ -123,14 +147,30 @@ describe("useEmployeeList", () => {
 
     await employeeList.createAndReloadEmployee({
       employeeNo: "EMP-009",
+      idCardNo: "310101199205152345",
+      age: 32,
       name: "赵六",
-      status: "ACTIVE",
+      gender: "FEMALE",
+      birthDate: "1992-05-15",
+      workAddress: "北京市朝阳区酒仙桥路 1 号",
+      contactAddress: "北京市东城区东华门街道 8 号",
+      hireDate: "2026-04-01",
+      employmentType: "00000000-0000-0000-0000-000000000211",
+      status: "00000000-0000-0000-0000-000000000111",
     });
 
     expect(mockedCreateEmployee).toHaveBeenCalledWith({
       employeeNo: "EMP-009",
+      idCardNo: "310101199205152345",
+      age: 32,
       name: "赵六",
-      status: "ACTIVE",
+      gender: "FEMALE",
+      birthDate: "1992-05-15",
+      workAddress: "北京市朝阳区酒仙桥路 1 号",
+      contactAddress: "北京市东城区东华门街道 8 号",
+      hireDate: "2026-04-01",
+      employmentType: "00000000-0000-0000-0000-000000000211",
+      status: "00000000-0000-0000-0000-000000000111",
     });
     expect(employeeList.pagination.page).toBe(1);
     expect(mockedGetEmployees).toHaveBeenLastCalledWith({
@@ -138,6 +178,8 @@ describe("useEmployeeList", () => {
       size: 10,
       keyword: undefined,
       status: undefined,
+      gender: undefined,
+      employmentType: undefined,
     });
     expect(employeeList.creating.value).toBe(false);
   });

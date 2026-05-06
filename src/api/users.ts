@@ -15,7 +15,7 @@ import type {
  * Get all users.
  */
 export async function getUsers(): Promise<ApiResponseUserDTOList> {
-  const { data: response } = await request.get<ApiResponseUserDTOList>("/api/users");
+  const { data: response } = await request.get<ApiResponseUserDTOList>("/api/v1/users");
   return response;
 }
 
@@ -23,7 +23,7 @@ export async function getUsers(): Promise<ApiResponseUserDTOList> {
  * Create a new user.
  */
 export async function createUser(data: CreateUserRequest): Promise<ApiResponseUserDTO> {
-  const { data: response } = await request.post<ApiResponseUserDTO>("/api/users", data);
+  const { data: response } = await request.post<ApiResponseUserDTO>("/api/v1/users", data);
   return response;
 }
 
@@ -32,7 +32,7 @@ export async function createUser(data: CreateUserRequest): Promise<ApiResponseUs
  */
 export async function resetUserPassword(id: UuidString): Promise<ApiResponseResetPasswordResponse> {
   const { data: response } = await request.post<ApiResponseResetPasswordResponse>(
-    `/api/users/${id}/reset-password`,
+    `/api/v1/users/${id}/reset-password`,
   );
   return response;
 }
@@ -41,7 +41,9 @@ export async function resetUserPassword(id: UuidString): Promise<ApiResponseRese
  * Get role code list for a user.
  */
 export async function getUserRoles(userId: UuidString): Promise<ApiResponseStringList> {
-  const { data: response } = await request.get<ApiResponseStringList>(`/api/users/${userId}/roles`);
+  const { data: response } = await request.get<ApiResponseStringList>(
+    `/api/v1/users/${userId}/roles`,
+  );
   return response;
 }
 
@@ -49,7 +51,7 @@ export async function getUserRoles(userId: UuidString): Promise<ApiResponseStrin
  * Assign roles to a user.
  */
 export async function assignUserRoles(userId: UuidString, data: AssignRolesRequest): Promise<void> {
-  await request.put(`/api/users/${userId}/roles`, data);
+  await request.patch(`/api/v1/users/${userId}/roles`, data);
 }
 
 /**
@@ -60,7 +62,7 @@ export async function updateUsername(
   data: UpdateUsernameRequest,
 ): Promise<ApiResponseUserDTO> {
   const { data: response } = await request.patch<ApiResponseUserDTO>(
-    `/api/users/${userId}/username`,
+    `/api/v1/users/${userId}/username`,
     data,
   );
   return response;
@@ -74,7 +76,7 @@ export async function updateUserStatus(
   data: UpdateUserStatusRequest,
 ): Promise<ApiResponseUserDTO> {
   const { data: response } = await request.patch<ApiResponseUserDTO>(
-    `/api/users/${id}/status`,
+    `/api/v1/users/${id}/status`,
     data,
   );
   return response;
@@ -84,5 +86,5 @@ export async function updateUserStatus(
  * Delete a user.
  */
 export async function deleteUser(id: UuidString): Promise<void> {
-  await request.delete(`/api/users/${id}`);
+  await request.delete(`/api/v1/users/${id}`);
 }

@@ -52,6 +52,8 @@ function handleFilterReset(): void {
   skipFilterWatch.value = true;
   filters.keyword = "";
   filters.status = "";
+  filters.gender = "";
+  filters.employmentType = "";
   skipFilterWatch.value = false;
   triggerSearchByFilter(false);
 }
@@ -105,6 +107,26 @@ watch(
     triggerSearchByFilter(false);
   },
 );
+
+watch(
+  () => filters.gender,
+  (): void => {
+    if (skipFilterWatch.value) {
+      return;
+    }
+    triggerSearchByFilter(false);
+  },
+);
+
+watch(
+  () => filters.employmentType,
+  (): void => {
+    if (skipFilterWatch.value) {
+      return;
+    }
+    triggerSearchByFilter(false);
+  },
+);
 </script>
 
 <template>
@@ -112,6 +134,8 @@ watch(
     <EmployeeFilters
       v-model:keyword="filters.keyword"
       v-model:status="filters.status"
+      v-model:gender="filters.gender"
+      v-model:employment-type="filters.employmentType"
       :loading="loading"
       @refresh="loadEmployees"
       @reset="handleFilterReset"

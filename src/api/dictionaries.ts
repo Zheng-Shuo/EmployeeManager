@@ -24,7 +24,7 @@ export async function getDictionaries(
   params?: GetDictionariesParams,
 ): Promise<ApiResponseDictionaryCategoryList> {
   const { data: response } = await request.get<ApiResponseDictionaryCategoryList>(
-    "/api/dictionaries",
+    "/api/v1/dictionaries",
     { params },
   );
   return response;
@@ -37,7 +37,7 @@ export async function getDictionariesWithItems(
   params?: Omit<GetDictionariesParams, "include">,
 ): Promise<ApiResponseDictionaryCategoryDetailDTOList> {
   const { data: response } = await request.get<ApiResponseDictionaryCategoryDetailDTOList>(
-    "/api/dictionaries",
+    "/api/v1/dictionaries",
     { params: { ...params, include: "items" } },
   );
   return response;
@@ -50,7 +50,7 @@ export async function getDictionaryById(
   id: UuidString,
 ): Promise<ApiResponseDictionaryCategoryDetailDTO> {
   const { data: response } = await request.get<ApiResponseDictionaryCategoryDetailDTO>(
-    `/api/dictionaries/${id}`,
+    `/api/v1/dictionaries/${id}`,
   );
   return response;
 }
@@ -62,7 +62,7 @@ export async function createDictionary(
   data: CreateCategoryRequest,
 ): Promise<ApiResponseDictionaryCategoryDTO> {
   const { data: response } = await request.post<ApiResponseDictionaryCategoryDTO>(
-    "/api/dictionaries",
+    "/api/v1/dictionaries",
     data,
   );
   return response;
@@ -76,7 +76,7 @@ export async function updateDictionary(
   data: UpdateCategoryRequest,
 ): Promise<ApiResponseDictionaryCategoryDTO> {
   const { data: response } = await request.put<ApiResponseDictionaryCategoryDTO>(
-    `/api/dictionaries/${id}`,
+    `/api/v1/dictionaries/${id}`,
     data,
   );
   return response;
@@ -86,7 +86,7 @@ export async function updateDictionary(
  * Delete a dictionary category (cascades to all items).
  */
 export async function deleteDictionary(id: UuidString): Promise<void> {
-  await request.delete(`/api/dictionaries/${id}`);
+  await request.delete(`/api/v1/dictionaries/${id}`);
 }
 
 /**
@@ -97,7 +97,7 @@ export async function createDictionaryItem(
   data: CreateItemRequest,
 ): Promise<ApiResponseDictionaryItemDTO> {
   const { data: response } = await request.post<ApiResponseDictionaryItemDTO>(
-    `/api/dictionaries/${categoryId}/items`,
+    `/api/v1/dictionaries/${categoryId}/items`,
     data,
   );
   return response;
@@ -112,7 +112,7 @@ export async function updateDictionaryItem(
   data: UpdateItemRequest,
 ): Promise<ApiResponseDictionaryItemDTO> {
   const { data: response } = await request.put<ApiResponseDictionaryItemDTO>(
-    `/api/dictionaries/${categoryId}/items/${itemId}`,
+    `/api/v1/dictionaries/${categoryId}/items/${itemId}`,
     data,
   );
   return response;
@@ -125,7 +125,7 @@ export async function deleteDictionaryItem(
   categoryId: UuidString,
   itemId: UuidString,
 ): Promise<void> {
-  await request.delete(`/api/dictionaries/${categoryId}/items/${itemId}`);
+  await request.delete(`/api/v1/dictionaries/${categoryId}/items/${itemId}`);
 }
 
 /**
@@ -136,7 +136,7 @@ export async function disableDictionaryItem(
   itemId: UuidString,
 ): Promise<ApiResponseDictionaryItemDTO> {
   const { data: response } = await request.patch<ApiResponseDictionaryItemDTO>(
-    `/api/dictionaries/${categoryId}/items/${itemId}/disable`,
+    `/api/v1/dictionaries/${categoryId}/items/${itemId}/disable`,
   );
   return response;
 }

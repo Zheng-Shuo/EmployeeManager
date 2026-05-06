@@ -26,9 +26,15 @@ tags:
     description: 职位字典接口
   - name: Dictionaries
     description: 数据字典管理接口
+  - name: Regions
+    description: 行政区划只读查询接口
+  - name: Ethnicities
+    description: 民族信息只读查询接口
+  - name: Attachments
+    description: 通用附件管理接口
 
 paths:
-  /api/auth/login:
+  /api/v1/auth/login:
     post:
       tags:
         - Auth
@@ -74,7 +80,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/auth/refresh:
+  /api/v1/auth/refresh:
     post:
       tags:
         - Auth
@@ -121,7 +127,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/auth/logout:
+  /api/v1/auth/logout:
     post:
       tags:
         - Auth
@@ -143,7 +149,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/auth/password:
+  /api/v1/auth/password:
     put:
       tags:
         - Auth
@@ -166,7 +172,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/users:
+  /api/v1/users:
     get:
       tags:
         - Users
@@ -217,7 +223,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/users/{id}/reset-password:
+  /api/v1/users/{id}/reset-password:
     post:
       tags:
         - Users
@@ -243,7 +249,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/users/{id}/username:
+  /api/v1/users/{id}/username:
     patch:
       tags:
         - Users
@@ -279,7 +285,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/users/{id}/status:
+  /api/v1/users/{id}/status:
     patch:
       tags:
         - Users
@@ -315,7 +321,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiResponseError"
         "422":
-          description: 状态值无效（仅支持 ACTIVE / DISABLED）
+          description: 状态值无效（需传入用户状态字典项 UUID）
           content:
             application/json:
               schema:
@@ -323,7 +329,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/users/{id}:
+  /api/v1/users/{id}:
     delete:
       tags:
         - Users
@@ -351,7 +357,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/roles:
+  /api/v1/roles:
     get:
       tags:
         - Roles
@@ -402,7 +408,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/roles/{id}:
+  /api/v1/roles/{id}:
     get:
       tags:
         - Roles
@@ -428,11 +434,11 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-    put:
+    patch:
       tags:
         - Roles
       summary: 更新角色
-      description: 需要权限 role:update
+      description: 需要权限 role:update。用 PATCH 方法部分更新角色信息。
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       requestBody:
@@ -484,7 +490,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/permissions:
+  /api/v1/permissions:
     get:
       tags:
         - Roles
@@ -504,7 +510,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/users/{userId}/roles:
+  /api/v1/users/{userId}/roles:
     get:
       tags:
         - Users
@@ -528,11 +534,11 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-    put:
+    patch:
       tags:
         - Users
       summary: 分配用户角色
-      description: 需要权限 user:update
+      description: 需要权限 user:update。用 PATCH 方法部分更新用户的角色集合。
       parameters:
         - $ref: "#/components/parameters/UuidUserIdPath"
       requestBody:
@@ -553,7 +559,113 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/employees:
+  /api/v1/attachments:
+    post:
+      tags:
+        - Attachments
+      summary: 上传实体附件
+      description: 需要权限 attachment:create。支持为任意业务实体上传附件（当前支持 entityType=EMPLOYEE）。
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - entityType
+                - entityId
+                - file
+              properties:
+                entityType:
+                  type: string
+                  example: EMPLOYEE
+                entityId:
+                  $ref: "#/components/schemas/UuidString"
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: 上传成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseAttachmentDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    get:
+      tags:
+        - Attachments
+      summary: 查询实体附件列表
+      description: 需要权限 attachment:view。根据实体类型与实体 ID 查询附件列表。
+      parameters:
+        - name: entityType
+          in: query
+          required: true
+          schema:
+            type: string
+            example: EMPLOYEE
+        - name: entityId
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/UuidString"
+      responses:
+        "200":
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseAttachmentDTOList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/attachments/{id}:
+    delete:
+      tags:
+        - Attachments
+      summary: 删除附件
+      description: 需要权限 attachment:delete。删除附件元数据、关系以及物理文件。
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "200":
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseMeta"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/employees:
     get:
       tags:
         - Employees
@@ -576,14 +688,169 @@ paths:
             default: 20
         - name: keyword
           in: query
-          description: 按姓名或工号模糊搜索
+          description: 按姓名、工号、身份证号、手机号、邮箱、地址模糊搜索
           schema:
             type: string
-        - name: status
+        - name: employeeNo
           in: query
-          description: 员工状态过滤
+          description: 工号模糊过滤
           schema:
-            $ref: "#/components/schemas/EmployeeStatus"
+            type: string
+        - name: name
+          in: query
+          description: 姓名模糊过滤
+          schema:
+            type: string
+        - name: idCardNo
+          in: query
+          description: 身份证号模糊过滤
+          schema:
+            type: string
+        - name: phone
+          in: query
+          description: 手机号模糊过滤
+          schema:
+            type: string
+        - name: email
+          in: query
+          description: 邮箱模糊过滤
+          schema:
+            type: string
+        - name: workAddress
+          in: query
+          description: 工作地址模糊过滤
+          schema:
+            type: string
+        - name: contactAddress
+          in: query
+          description: 联系地址模糊过滤
+          schema:
+            type: string
+        - name: statuses
+          in: query
+          description: 员工状态字典项 ID 列表，支持逗号分隔或多次传参
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/UuidString"
+        - name: genders
+          in: query
+          description: 性别列表，支持逗号分隔或多次传参
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Gender"
+        - name: employmentTypes
+          in: query
+          description: 用工形式字典项 ID 列表，支持逗号分隔或多次传参
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/UuidString"
+        - name: educations
+          in: query
+          description: 学历字典项 ID 列表，支持逗号分隔或多次传参
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/UuidString"
+        - name: ethnicities
+          in: query
+          description: 民族表 ID 列表，引用 ethnicities 表主键，支持逗号分隔或多次传参
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/UuidString"
+        - name: politicalStatuses
+          in: query
+          description: 政治面貌列表，支持逗号分隔或多次传参
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: nativePlaces
+          in: query
+          description: 籍贯行政区划代码列表，支持逗号分隔或多次传参
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/RegionCode"
+        - name: primaryOrgUnitIds
+          in: query
+          description: 主任职组织 ID 列表，支持逗号分隔或多次传参
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/UuidString"
+        - name: primaryPositionIds
+          in: query
+          description: 主任职岗位 ID 列表，支持逗号分隔或多次传参
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/UuidString"
+        - name: ageMin
+          in: query
+          description: 最小年龄
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 150
+        - name: ageMax
+          in: query
+          description: 最大年龄
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 150
+        - name: birthDateFrom
+          in: query
+          description: 出生日期起始值
+          schema:
+            $ref: "#/components/schemas/DateString"
+        - name: birthDateTo
+          in: query
+          description: 出生日期结束值
+          schema:
+            $ref: "#/components/schemas/DateString"
+        - name: hireDateFrom
+          in: query
+          description: 入职日期起始值
+          schema:
+            $ref: "#/components/schemas/DateString"
+        - name: hireDateTo
+          in: query
+          description: 入职日期结束值
+          schema:
+            $ref: "#/components/schemas/DateString"
+        - name: sort
+          in: query
+          description: 排序规则列表，格式为 field:asc 或 field:desc，支持逗号分隔或多次传参
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              example: hireDate:desc
       responses:
         "200":
           description: 查询成功
@@ -595,6 +862,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -602,7 +871,7 @@ paths:
       tags:
         - Employees
       summary: 创建员工
-      description: 需要权限 employee:create。支持 application/json 和 multipart/form-data（可上传照片与多个附件）
+      description: 需要权限 employee:create。支持 application/json 和 multipart/form-data（可上传照片）
       requestBody:
         required: true
         content:
@@ -632,7 +901,69 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/employees/{id}:
+  /api/v1/employees/preferences/list-layout:
+    get:
+      tags:
+        - Employees
+      summary: 获取当前用户的员工列表列布局偏好
+      description: 仅需登录，无额外权限要求。若当前用户尚未保存偏好，则返回系统默认列布局。
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeListPreferenceDTO"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags:
+        - Employees
+      summary: 保存当前用户的员工列表列布局偏好
+      description: 仅需登录，无额外权限要求。提交的列集合必须覆盖全部支持字段，顺序必须从 1 开始且不重复。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmployeeListPreferenceRequest"
+      responses:
+        "200":
+          description: 保存成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeListPreferenceDTO"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags:
+        - Employees
+      summary: 重置当前用户的员工列表列布局偏好
+      description: 仅需登录，无额外权限要求。重置后会保存系统默认列布局。
+      responses:
+        "200":
+          description: 重置成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeListPreferenceDTO"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/employees/{id}:
     get:
       tags:
         - Employees
@@ -658,11 +989,80 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /api/v1/regions:
+    get:
+      tags:
+        - Regions
+      summary: 查询行政区划列表
+      description: 仅需登录，无额外权限要求。支持按代码、父级代码、级别和关键字过滤。
+      parameters:
+        - name: code
+          in: query
+          description: 精确匹配行政区划代码
+          schema:
+            $ref: "#/components/schemas/RegionCode"
+        - name: parentCode
+          in: query
+          description: 精确匹配父级行政区划代码
+          schema:
+            $ref: "#/components/schemas/RegionCode"
+        - name: level
+          in: query
+          description: 行政区划级别
+          schema:
+            $ref: "#/components/schemas/RegionLevel"
+        - name: keyword
+          in: query
+          description: 按代码、名称、全名模糊搜索
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseRegionDTOList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/regions/{code}:
+    get:
+      tags:
+        - Regions
+      summary: 获取行政区划详情
+      description: 仅需登录，无额外权限要求。
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/RegionCode"
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseRegionDTO"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
     put:
       tags:
         - Employees
       summary: 更新员工
-      description: 需要权限 employee:update。支持 application/json 和 multipart/form-data（可上传照片与多个附件）
+      description: 需要权限 employee:update。支持 application/json 和 multipart/form-data（可上传照片）
       parameters:
         - $ref: "#/components/parameters/UuidIdPath"
       requestBody:
@@ -715,7 +1115,54 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/organizations:
+  /api/v1/ethnicities:
+    get:
+      tags:
+        - Ethnicities
+      summary: 查询民族列表
+      description: 仅需登录，无额外权限要求。返回所有启用的民族信息，可选包含已禁用项。支持前端本地模糊搜索。
+      parameters:
+        - name: includeDisabled
+          in: query
+          description: 是否包含已禁用的民族项，默认 false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEthnicityDTOList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/ethnicities/{id}:
+    get:
+      tags:
+        - Ethnicities
+      summary: 获取民族详情
+      description: 仅需登录，无额外权限要求。
+      parameters:
+        - $ref: "#/components/parameters/UuidIdPath"
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseEthnicityDTO"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/organizations:
     get:
       tags:
         - Organizations
@@ -772,7 +1219,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/organizations/{id}:
+  /api/v1/organizations/{id}:
     get:
       tags:
         - Organizations
@@ -854,7 +1301,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/organizations/{id}/actions/move:
+  /api/v1/organizations/{id}/actions/move:
     post:
       tags:
         - Organizations
@@ -891,7 +1338,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/organizations/{id}/subtree:
+  /api/v1/organizations/{id}/subtree:
     get:
       tags:
         - Organizations
@@ -917,7 +1364,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/organizations/{id}/path:
+  /api/v1/organizations/{id}/path:
     get:
       tags:
         - Organizations
@@ -943,7 +1390,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/positions:
+  /api/v1/positions:
     get:
       tags:
         - Positions
@@ -999,7 +1446,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/positions/{id}:
+  /api/v1/positions/{id}:
     get:
       tags:
         - Positions
@@ -1083,7 +1530,7 @@ paths:
 
   # ── 数据字典 ─────────────────────────────────────────────────────────
 
-  /api/dictionaries:
+  /api/v1/dictionaries:
     get:
       tags:
         - Dictionaries
@@ -1152,7 +1599,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/dictionaries/{id}:
+  /api/v1/dictionaries/{id}:
     get:
       tags:
         - Dictionaries
@@ -1232,7 +1679,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/dictionaries/{id}/items:
+  /api/v1/dictionaries/{id}/items:
     post:
       tags:
         - Dictionaries
@@ -1268,7 +1715,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/dictionaries/{id}/items/{itemId}:
+  /api/v1/dictionaries/{id}/items/{itemId}:
     put:
       tags:
         - Dictionaries
@@ -1333,7 +1780,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/dictionaries/{id}/items/{itemId}/disable:
+  /api/v1/dictionaries/{id}/items/{itemId}/disable:
     patch:
       tags:
         - Dictionaries
@@ -1501,10 +1948,7 @@ components:
 
     UserStatus:
       type: string
-      description: "用户账号状态 \u2014 ACTIVE 正常 | DISABLED 禁用"
-      enum:
-        - ACTIVE
-        - DISABLED
+      description: 用户状态字典项 ID（UUID）
 
     EmployeeStatus:
       type: string
@@ -1642,6 +2086,28 @@ components:
               items:
                 $ref: "#/components/schemas/PermissionDTO"
 
+    ApiResponseAttachmentDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/EmployeeAttachmentDTO"
+
+    ApiResponseAttachmentDTOList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/EmployeeAttachmentDTO"
+
     ApiResponseStringList:
       allOf:
         - $ref: "#/components/schemas/ApiResponseMeta"
@@ -1683,6 +2149,60 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/PageResponseEmployeeDTO"
+
+    ApiResponseEmployeeListPreferenceDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/EmployeeListPreferenceDTO"
+
+    ApiResponseRegionDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/RegionDTO"
+
+    ApiResponseRegionDTOList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/RegionDTO"
+
+    ApiResponseEthnicityDTO:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: "#/components/schemas/EthnicityDTO"
+
+    ApiResponseEthnicityDTOList:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseMeta"
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/EthnicityDTO"
 
     ApiResponseOrgUnitDTO:
       allOf:
@@ -1834,6 +2354,7 @@ components:
         - username
         - roles
         - status
+        - statusLabel
         - forcePasswordChange
         - createdAt
         - updatedAt
@@ -1848,6 +2369,8 @@ components:
             type: string
         status:
           $ref: "#/components/schemas/UserStatus"
+        statusLabel:
+          type: string
         forcePasswordChange:
           type: boolean
         createdAt:
@@ -1887,16 +2410,20 @@ components:
       properties:
         status:
           type: string
-          enum: [ACTIVE, DISABLED]
-          description: 用户状态，仅支持 ACTIVE 或 DISABLED
+          description: 用户状态字典项 ID（UUID）
 
     ResetPasswordResponse:
       type: object
       required:
-        - temporaryPassword
+        - success
+        - message
       properties:
-        temporaryPassword:
+        success:
+          type: boolean
+          default: true
+        message:
           type: string
+          example: 临时密码已发送至系统管理员，请联系管理员获取新密码
 
     RoleDTO:
       type: object
@@ -1968,10 +2495,13 @@ components:
       required:
         - id
         - code
+        - name
       properties:
         id:
           $ref: "#/components/schemas/UuidString"
         code:
+          type: string
+        name:
           type: string
         description:
           type: string
@@ -2025,7 +2555,10 @@ components:
         email:
           type: string
           nullable: true
-        address:
+        workAddress:
+          type: string
+          nullable: true
+        contactAddress:
           type: string
           nullable: true
         photoPath:
@@ -2037,11 +2570,23 @@ components:
           type: string
           description: 员工状态字典项 ID（UUID）
         ethnicity:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
           nullable: true
+          description: 民族表 ID（UUID），引用 ethnicities 表主键
         politicalStatus:
           type: string
           nullable: true
+        education:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+          description: 学历字典项 ID（UUID）
+        nativePlace:
+          allOf:
+            - $ref: "#/components/schemas/RegionCode"
+          nullable: true
+          description: 籍贯行政区划代码
         employmentType:
           type: string
           description: 用工形式字典项 ID（UUID）
@@ -2184,7 +2729,10 @@ components:
         email:
           type: string
           nullable: true
-        address:
+        workAddress:
+          type: string
+          nullable: true
+        contactAddress:
           type: string
           nullable: true
         photoPath:
@@ -2195,11 +2743,23 @@ components:
           description: 员工状态字典项 ID（UUID），不传则使用默认值
           nullable: true
         ethnicity:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
           nullable: true
+          description: 民族表 ID（UUID），引用 ethnicities 表主键
         politicalStatus:
           type: string
           nullable: true
+        education:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+          description: 学历字典项 ID（UUID）
+        nativePlace:
+          allOf:
+            - $ref: "#/components/schemas/RegionCode"
+          nullable: true
+          description: 籍贯行政区划代码
         assignments:
           type: array
           items:
@@ -2240,26 +2800,30 @@ components:
           type: string
         email:
           type: string
-        address:
+        workAddress:
+          type: string
+        contactAddress:
           type: string
         status:
           type: string
           description: 员工状态字典项 ID（UUID）
         ethnicity:
           type: string
+          description: 民族表 ID（UUID），引用 ethnicities 表主键
         politicalStatus:
           type: string
+        education:
+          type: string
+          description: 学历字典项 ID（UUID）
+        nativePlace:
+          allOf:
+            - $ref: "#/components/schemas/RegionCode"
         assignments:
           type: string
           description: 任职分配列表（JSON 字符串），元素为 AssignmentInput
         photo:
           type: string
           format: binary
-        attachments:
-          type: array
-          items:
-            type: string
-            format: binary
 
     UpdateEmployeeRequest:
       type: object
@@ -2298,7 +2862,10 @@ components:
         email:
           type: string
           nullable: true
-        address:
+        workAddress:
+          type: string
+          nullable: true
+        contactAddress:
           type: string
           nullable: true
         photoPath:
@@ -2309,11 +2876,23 @@ components:
           description: 员工状态字典项 ID（UUID）
           nullable: true
         ethnicity:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
           nullable: true
+          description: 民族表 ID（UUID），引用 ethnicities 表主键
         politicalStatus:
           type: string
           nullable: true
+        education:
+          allOf:
+            - $ref: "#/components/schemas/UuidString"
+          nullable: true
+          description: 学历字典项 ID（UUID）
+        nativePlace:
+          allOf:
+            - $ref: "#/components/schemas/RegionCode"
+          nullable: true
+          description: 籍贯行政区划代码
         assignments:
           type: array
           items:
@@ -2354,26 +2933,75 @@ components:
           type: string
         email:
           type: string
-        address:
+        workAddress:
+          type: string
+        contactAddress:
           type: string
         status:
           type: string
           description: 员工状态字典项 ID（UUID）
         ethnicity:
           type: string
+          description: 民族表 ID（UUID），引用 ethnicities 表主键
         politicalStatus:
           type: string
+        education:
+          type: string
+          description: 学历字典项 ID（UUID）
+        nativePlace:
+          allOf:
+            - $ref: "#/components/schemas/RegionCode"
         assignments:
           type: string
           description: 任职分配列表（JSON 字符串），元素为 AssignmentInput
         photo:
           type: string
           format: binary
-        attachments:
+
+    EmployeeListColumnConfig:
+      type: object
+      required:
+        - fieldKey
+        - visible
+        - order
+      properties:
+        fieldKey:
+          type: string
+        visible:
+          type: boolean
+        order:
+          type: integer
+          minimum: 1
+        width:
+          type: integer
+          nullable: true
+          minimum: 1
+
+    EmployeeListPreferenceDTO:
+      type: object
+      required:
+        - userId
+        - columns
+        - updatedAt
+      properties:
+        userId:
+          $ref: "#/components/schemas/UuidString"
+        columns:
           type: array
           items:
-            type: string
-            format: binary
+            $ref: "#/components/schemas/EmployeeListColumnConfig"
+        updatedAt:
+          $ref: "#/components/schemas/TimestampString"
+
+    UpdateEmployeeListPreferenceRequest:
+      type: object
+      required:
+        - columns
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmployeeListColumnConfig"
 
     PageResponseEmployeeDTO:
       type: object
@@ -2397,6 +3025,79 @@ components:
           format: int64
         totalPages:
           type: integer
+
+    RegionCode:
+      type: string
+      pattern: "^[0-9]{6}$"
+      example: "110101"
+
+    RegionLevel:
+      type: integer
+      enum: [1, 2, 3]
+
+    RegionDTO:
+      type: object
+      required:
+        - id
+        - code
+        - name
+        - fullName
+        - level
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        code:
+          $ref: "#/components/schemas/RegionCode"
+        name:
+          type: string
+        fullName:
+          type: string
+        level:
+          $ref: "#/components/schemas/RegionLevel"
+        parentCode:
+          allOf:
+            - $ref: "#/components/schemas/RegionCode"
+          nullable: true
+
+    EthnicityDTO:
+      type: object
+      required:
+        - id
+        - name
+        - romanizedName
+        - alphaCode
+        - numericCode
+        - isSystem
+        - isEnabled
+        - sortOrder
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidString"
+        name:
+          type: string
+          description: 民族名称（中文）
+          example: 汉族
+        romanizedName:
+          type: string
+          description: 罗马字母拼写
+          example: Han
+        alphaCode:
+          type: string
+          description: 字母代码（2~4位）
+          example: HA
+        numericCode:
+          type: string
+          description: 数字代码（3位）
+          example: "001"
+        isSystem:
+          type: boolean
+          description: 是否为系统内置保留项（外国人、未识别民族等）
+        isEnabled:
+          type: boolean
+          description: 是否启用
+        sortOrder:
+          type: integer
+          description: 排序序号
 
     OrgUnitDTO:
       type: object

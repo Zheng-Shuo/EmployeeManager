@@ -21,7 +21,7 @@ export async function getOrganizations(
 ): Promise<ApiResponseOrgUnitDTOList | ApiResponseOrgUnitTreeNodeList> {
   const { data: response } = await request.get<
     ApiResponseOrgUnitDTOList | ApiResponseOrgUnitTreeNodeList
-  >("/api/organizations", { params });
+  >("/api/v1/organizations", { params });
   return response;
 }
 
@@ -30,7 +30,7 @@ export async function getOrganizations(
  */
 export async function getOrganizationTree(): Promise<ApiResponseOrgUnitTreeNodeList> {
   const { data: response } = await request.get<ApiResponseOrgUnitTreeNodeList>(
-    "/api/organizations",
+    "/api/v1/organizations",
     { params: { tree: true } },
   );
   return response;
@@ -42,7 +42,10 @@ export async function getOrganizationTree(): Promise<ApiResponseOrgUnitTreeNodeL
 export async function createOrganization(
   data: CreateOrgUnitRequest,
 ): Promise<ApiResponseOrgUnitDTO> {
-  const { data: response } = await request.post<ApiResponseOrgUnitDTO>("/api/organizations", data);
+  const { data: response } = await request.post<ApiResponseOrgUnitDTO>(
+    "/api/v1/organizations",
+    data,
+  );
   return response;
 }
 
@@ -50,7 +53,9 @@ export async function createOrganization(
  * Get an organization unit by id.
  */
 export async function getOrganizationById(id: UuidString): Promise<ApiResponseOrgUnitDTO> {
-  const { data: response } = await request.get<ApiResponseOrgUnitDTO>(`/api/organizations/${id}`);
+  const { data: response } = await request.get<ApiResponseOrgUnitDTO>(
+    `/api/v1/organizations/${id}`,
+  );
   return response;
 }
 
@@ -62,7 +67,7 @@ export async function updateOrganization(
   data: UpdateOrgUnitRequest,
 ): Promise<ApiResponseOrgUnitDTO> {
   const { data: response } = await request.patch<ApiResponseOrgUnitDTO>(
-    `/api/organizations/${id}`,
+    `/api/v1/organizations/${id}`,
     data,
   );
   return response;
@@ -76,7 +81,7 @@ export async function moveOrganization(
   data: MoveOrgUnitRequest,
 ): Promise<ApiResponseOrgUnitDTO> {
   const { data: response } = await request.post<ApiResponseOrgUnitDTO>(
-    `/api/organizations/${id}/actions/move`,
+    `/api/v1/organizations/${id}/actions/move`,
     data,
   );
   return response;
@@ -86,7 +91,7 @@ export async function moveOrganization(
  * Delete an organization unit.
  */
 export async function deleteOrganization(id: UuidString): Promise<void> {
-  await request.delete(`/api/organizations/${id}`);
+  await request.delete(`/api/v1/organizations/${id}`);
 }
 
 /**
@@ -94,7 +99,7 @@ export async function deleteOrganization(id: UuidString): Promise<void> {
  */
 export async function getOrganizationSubtree(id: UuidString): Promise<ApiResponseOrgUnitDTOList> {
   const { data: response } = await request.get<ApiResponseOrgUnitDTOList>(
-    `/api/organizations/${id}/subtree`,
+    `/api/v1/organizations/${id}/subtree`,
   );
   return response;
 }
@@ -104,7 +109,7 @@ export async function getOrganizationSubtree(id: UuidString): Promise<ApiRespons
  */
 export async function getOrganizationPath(id: UuidString): Promise<ApiResponseOrgUnitDTOList> {
   const { data: response } = await request.get<ApiResponseOrgUnitDTOList>(
-    `/api/organizations/${id}/path`,
+    `/api/v1/organizations/${id}/path`,
   );
   return response;
 }

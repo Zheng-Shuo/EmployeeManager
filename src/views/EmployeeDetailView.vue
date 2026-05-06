@@ -3,14 +3,18 @@ import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { getEmployeeById } from "@/api/employees";
+import { getRegionByCode } from "@/api/regions";
 import type { EmployeeAssignmentDTO, EmployeeAttachmentDTO, EmployeeDetailDTO } from "@/api/types";
 import { useDictionaryStore } from "@/stores/dictionary";
+import { useEthnicityStore } from "@/stores/ethnicity";
 
 const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
 const employee = ref<EmployeeDetailDTO | null>(null);
+const nativePlaceLabel = ref<string>("--");
 const dictionaryStore = useDictionaryStore();
+const ethnicityStore = useEthnicityStore();
 
 function formatText(value?: string | null): string {
   return value && value.trim() ? value : "--";
@@ -73,12 +77,24 @@ async function loadDetail(): Promise<void> {
   try {
     const response = await getEmployeeById(employeeId);
     employee.value = response.data;
+    nativePlaceLabel.value = "--";
+    if (response.data.nativePlace) {
+      try {
+        const regionResponse = await getRegionByCode(response.data.nativePlace);
+        nativePlaceLabel.value = regionResponse.data.fullName || regionResponse.data.name;
+      } catch {
+        nativePlaceLabel.value = response.data.nativePlace;
+      }
+    }
   } finally {
     loading.value = false;
   }
 }
 
 onMounted((): void => {
+  if (!ethnicityStore.loaded) {
+    void ethnicityStore.loadAll();
+  }
   void loadDetail();
 });
 </script>
@@ -120,6 +136,9 @@ onMounted((): void => {
               <el-descriptions-item label="性别">{{
                 formatGender(employee.gender)
               }}</el-descriptions-item>
+              <el-descriptions-item label="民族">{{
+                employee.ethnicity ? ethnicityStore.getNameById(employee.ethnicity) : "--"
+              }}</el-descriptions-item>
               <el-descriptions-item label="状态">{{
                 dictionaryStore.getLabelById("员工状态", employee.status)
               }}</el-descriptions-item>
@@ -135,8 +154,12 @@ onMounted((): void => {
               <el-descriptions-item label="入职日期">{{
                 formatText(employee.hireDate)
               }}</el-descriptions-item>
+              <el-descriptions-item label="籍贯">{{ nativePlaceLabel }}</el-descriptions-item>
+              <el-descriptions-item label="工作地址" :span="2">
+                {{ formatText(employee.workAddress) }}
+              </el-descriptions-item>
               <el-descriptions-item label="联系地址" :span="2">
-                {{ formatText(employee.address) }}
+                {{ formatText(employee.contactAddress) }}
               </el-descriptions-item>
               <el-descriptions-item label="任职分配" :span="2">
                 <div v-if="(employee.assignments ?? []).length > 0" class="assignments-wrap">

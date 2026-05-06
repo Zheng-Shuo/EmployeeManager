@@ -56,6 +56,13 @@ export const appMenuItems: AppMenuItem[] = [
         icon: "notebook",
         permissions: ["dictionary:manage"],
       },
+      {
+        key: "feature-config",
+        label: "功能配置",
+        path: "/feature-config",
+        icon: "setting",
+        permissions: ["user:view", "role:view", "dictionary:manage"],
+      },
     ],
   },
 ];

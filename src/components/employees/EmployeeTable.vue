@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 import type { EmployeeDTO } from "@/api/types";
+import { loadEmployeeListColumnsConfig } from "@/composables/useEmployeeListColumnsConfig";
+import type { EmployeeListColumnConfigItem } from "@/composables/useEmployeeListColumnsConfig";
 import { useDictionaryStore } from "@/stores/dictionary";
 
 interface Props {
@@ -20,6 +23,14 @@ const emit = defineEmits<{
 }>();
 const router = useRouter();
 const dictionaryStore = useDictionaryStore();
+const columnConfigs = computed<EmployeeListColumnConfigItem[]>(() =>
+  loadEmployeeListColumnsConfig(),
+);
+const visibleColumns = computed<EmployeeListColumnConfigItem[]>(() =>
+  [...columnConfigs.value]
+    .filter((item: EmployeeListColumnConfigItem) => item.visible)
+    .sort((a: EmployeeListColumnConfigItem, b: EmployeeListColumnConfigItem) => a.order - b.order),
+);
 
 interface StatusPresentation {
   label: string;
@@ -29,6 +40,14 @@ interface StatusPresentation {
 
 function formatText(value?: string | null): string {
   return value && value.trim() ? value : "--";
+}
+
+function formatGender(value: string): string {
+  return value === "MALE" ? "男" : value === "FEMALE" ? "女" : value;
+}
+
+function getEmploymentTypeLabel(value: string): string {
+  return dictionaryStore.getLabelById("用工形式", value);
 }
 
 function getStatusPresentation(status: string): StatusPresentation {
@@ -64,7 +83,7 @@ function handleRowClick(row: EmployeeDTO): void {
       <div class="table-header">
         <div>
           <div class="title">员工档案</div>
-          <div class="subtitle">支持按工号、姓名和状态筛选当前员工清单</div>
+          <div class="subtitle">支持按工号、姓名、状态、性别和用工形式筛选当前员工清单</div>
         </div>
         <div class="right-actions">
           <div class="summary">共 {{ props.total }} 条记录</div>
@@ -82,53 +101,111 @@ function handleRowClick(row: EmployeeDTO): void {
         height="100%"
         @row-click="handleRowClick"
       >
-        <el-table-column
-          prop="employeeNo"
-          label="工号"
-          min-width="130"
-          header-align="center"
-          align="center"
-        />
-        <el-table-column
-          prop="name"
-          label="姓名"
-          min-width="140"
-          header-align="center"
-          align="center"
-        />
-        <el-table-column label="联系方式" min-width="220" header-align="center" align="center">
-          <template #default="scope">
-            <div class="contact-cell">
-              <span>{{ formatText(scope.row.phone) }}</span>
-              <span class="muted">{{ formatText(scope.row.email) }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="hireDate"
-          label="入职日期"
-          min-width="120"
-          header-align="center"
-          align="center"
-        >
-          <template #default="scope">
-            {{ formatText(scope.row.hireDate) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="120" header-align="center" align="center">
-          <template #default="scope">
-            <el-tag :type="getStatusPresentation(scope.row.status).type" effect="light">
-              {{ getStatusPresentation(scope.row.status).label }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="updatedAt"
-          label="最后更新"
-          min-width="180"
-          header-align="center"
-          align="center"
-        />
+        <template v-for="column in visibleColumns" :key="column.key">
+          <el-table-column
+            v-if="column.key === 'employeeNo'"
+            prop="employeeNo"
+            label="工号"
+            min-width="130"
+            header-align="center"
+            align="center"
+          />
+          <el-table-column
+            v-else-if="column.key === 'name'"
+            prop="name"
+            label="姓名"
+            min-width="120"
+            header-align="center"
+            align="center"
+          />
+          <el-table-column
+            v-else-if="column.key === 'gender'"
+            prop="gender"
+            label="性别"
+            width="90"
+            header-align="center"
+            align="center"
+          >
+            <template #default="scope">
+              {{ formatGender(scope.row.gender) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-else-if="column.key === 'age'"
+            prop="age"
+            label="年龄"
+            width="90"
+            header-align="center"
+            align="center"
+          />
+          <el-table-column
+            v-else-if="column.key === 'idCardNo'"
+            prop="idCardNo"
+            label="身份证号"
+            min-width="180"
+            header-align="center"
+            align="center"
+          />
+          <el-table-column
+            v-else-if="column.key === 'contact'"
+            label="联系方式"
+            min-width="190"
+            header-align="center"
+            align="center"
+          >
+            <template #default="scope">
+              <div class="contact-cell">
+                <span>{{ formatText(scope.row.phone) }}</span>
+                <span class="muted">{{ formatText(scope.row.email) }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-else-if="column.key === 'employmentType'"
+            prop="employmentType"
+            label="用工形式"
+            min-width="140"
+            header-align="center"
+            align="center"
+          >
+            <template #default="scope">
+              {{ getEmploymentTypeLabel(scope.row.employmentType) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-else-if="column.key === 'hireDate'"
+            prop="hireDate"
+            label="入职日期"
+            min-width="120"
+            header-align="center"
+            align="center"
+          >
+            <template #default="scope">
+              {{ formatText(scope.row.hireDate) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-else-if="column.key === 'status'"
+            label="状态"
+            width="120"
+            header-align="center"
+            align="center"
+          >
+            <template #default="scope">
+              <el-tag :type="getStatusPresentation(scope.row.status).type" effect="light">
+                {{ getStatusPresentation(scope.row.status).label }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-else-if="column.key === 'updatedAt'"
+            prop="updatedAt"
+            label="最后更新"
+            min-width="180"
+            header-align="center"
+            align="center"
+          />
+        </template>
         <el-table-column
           label="操作"
           width="120"

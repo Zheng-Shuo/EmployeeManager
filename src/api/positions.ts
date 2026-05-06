@@ -17,7 +17,7 @@ export interface GetPositionsParams {
 export async function getPositions(
   params?: GetPositionsParams,
 ): Promise<ApiResponsePositionDTOList> {
-  const { data: response } = await request.get<ApiResponsePositionDTOList>("/api/positions", {
+  const { data: response } = await request.get<ApiResponsePositionDTOList>("/api/v1/positions", {
     params,
   });
   return response;
@@ -27,7 +27,7 @@ export async function getPositions(
  * Create a position.
  */
 export async function createPosition(data: CreatePositionRequest): Promise<ApiResponsePositionDTO> {
-  const { data: response } = await request.post<ApiResponsePositionDTO>("/api/positions", data);
+  const { data: response } = await request.post<ApiResponsePositionDTO>("/api/v1/positions", data);
   return response;
 }
 
@@ -35,7 +35,7 @@ export async function createPosition(data: CreatePositionRequest): Promise<ApiRe
  * Get a position by id.
  */
 export async function getPositionById(id: UuidString): Promise<ApiResponsePositionDTO> {
-  const { data: response } = await request.get<ApiResponsePositionDTO>(`/api/positions/${id}`);
+  const { data: response } = await request.get<ApiResponsePositionDTO>(`/api/v1/positions/${id}`);
   return response;
 }
 
@@ -47,7 +47,7 @@ export async function updatePosition(
   data: UpdatePositionRequest,
 ): Promise<ApiResponsePositionDTO> {
   const { data: response } = await request.put<ApiResponsePositionDTO>(
-    `/api/positions/${id}`,
+    `/api/v1/positions/${id}`,
     data,
   );
   return response;
@@ -57,5 +57,5 @@ export async function updatePosition(
  * Delete a position.
  */
 export async function deletePosition(id: UuidString): Promise<void> {
-  await request.delete(`/api/positions/${id}`);
+  await request.delete(`/api/v1/positions/${id}`);
 }

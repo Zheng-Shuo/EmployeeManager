@@ -17,7 +17,8 @@ interface EmployeeMock {
   birthDate: string | null;
   phone: string | null;
   email: string | null;
-  address: string | null;
+  workAddress: string | null;
+  contactAddress: string | null;
   hireDate: string | null;
   status: string;
   createdAt: string;
@@ -41,7 +42,8 @@ const EMPLOYEES: EmployeeMock[] = [
     birthDate: "1990-01-01",
     phone: "13800000001",
     email: "zhangsan@example.com",
-    address: "上海市浦东新区",
+    workAddress: "上海市浦东新区",
+    contactAddress: "上海市杨浦区",
     hireDate: "2023-05-01",
     status: "ACTIVE",
     createdAt: "2026-01-01 10:00:00",
@@ -55,7 +57,8 @@ const EMPLOYEES: EmployeeMock[] = [
     birthDate: "1992-02-02",
     phone: "13800000002",
     email: "lisi@example.com",
-    address: "杭州市西湖区",
+    workAddress: "杭州市西湖区",
+    contactAddress: "杭州市拱墅区",
     hireDate: "2024-02-01",
     status: "RETIRED",
     createdAt: "2026-01-01 10:00:00",
@@ -69,7 +72,8 @@ const EMPLOYEES: EmployeeMock[] = [
     birthDate: null,
     phone: null,
     email: null,
-    address: null,
+    workAddress: null,
+    contactAddress: null,
     hireDate: null,
     status: "DISABLED",
     createdAt: "2026-01-01 10:00:00",
@@ -99,7 +103,8 @@ async function mockEmployeesApi(page: Page): Promise<void> {
       birthDate?: string | null;
       phone?: string | null;
       email?: string | null;
-      address?: string | null;
+      workAddress?: string | null;
+      contactAddress?: string | null;
       hireDate?: string | null;
       status?: string;
     };
@@ -112,7 +117,8 @@ async function mockEmployeesApi(page: Page): Promise<void> {
       birthDate: payload.birthDate ?? null,
       phone: payload.phone ?? null,
       email: payload.email ?? null,
-      address: payload.address ?? null,
+      workAddress: payload.workAddress ?? null,
+      contactAddress: payload.contactAddress ?? null,
       hireDate: payload.hireDate ?? null,
       status: payload.status ?? "ACTIVE",
       createdAt: "2026-04-13 09:00:00",

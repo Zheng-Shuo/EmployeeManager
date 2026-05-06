@@ -7,6 +7,8 @@ import type { CreateEmployeeRequest, EmployeeDTO } from "@/api/types";
 interface EmployeeFilters {
   keyword: string;
   status: string;
+  gender: string;
+  employmentType: string;
 }
 
 interface EmployeePagination {
@@ -42,6 +44,8 @@ export function useEmployeeList(): UseEmployeeListResult {
   const filters = reactive<EmployeeFilters>({
     keyword: "",
     status: "",
+    gender: "",
+    employmentType: "",
   });
   const pagination = reactive<EmployeePagination>({
     page: DEFAULT_PAGE,
@@ -54,7 +58,11 @@ export function useEmployeeList(): UseEmployeeListResult {
   const creating = ref(false);
 
   const hasFilters = computed<boolean>(
-    () => Boolean(filters.keyword.trim()) || Boolean(filters.status),
+    () =>
+      Boolean(filters.keyword.trim()) ||
+      Boolean(filters.status) ||
+      Boolean(filters.gender) ||
+      Boolean(filters.employmentType),
   );
 
   async function loadEmployees(): Promise<void> {
@@ -65,6 +73,8 @@ export function useEmployeeList(): UseEmployeeListResult {
         size: pagination.size,
         keyword: filters.keyword.trim() || undefined,
         status: filters.status || undefined,
+        gender: filters.gender || undefined,
+        employmentType: filters.employmentType || undefined,
       });
       employees.value = response.data.items;
       pagination.page = response.data.page;
@@ -84,6 +94,8 @@ export function useEmployeeList(): UseEmployeeListResult {
   async function handleReset(): Promise<void> {
     filters.keyword = "";
     filters.status = "";
+    filters.gender = "";
+    filters.employmentType = "";
     pagination.page = DEFAULT_PAGE;
     await loadEmployees();
   }
